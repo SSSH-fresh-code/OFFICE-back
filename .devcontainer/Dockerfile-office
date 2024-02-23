@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/devcontainers/typescript-node:1-18-bullseye
+
+VOLUME [ "../", "/workspace:cached" ]
+
+RUN sudo corepack enable && npm install -g @nestjs/cli typescript tsc

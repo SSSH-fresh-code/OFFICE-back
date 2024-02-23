@@ -1,0 +1,9 @@
+{
+  "name": "OFFICE",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "office",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "npm install -g pnpm @nestjs/cli typescript tsc",
+  "remoteUser": "root"
+}
