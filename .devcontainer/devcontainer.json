@@ -4,6 +4,6 @@
   "service": "office",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "npm install -g pnpm @nestjs/cli typescript tsc",
+  "postCreateCommand": "npm install -g @nestjs/cli",
   "remoteUser": "root"
 }
