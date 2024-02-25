@@ -2,7 +2,7 @@ import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { TUsers, TUserRole } from 'types-sssh';
 
-@Entity()
+@Entity('users')
 export class UserEntity extends BaseEntity implements TUsers {
   @PrimaryGeneratedColumn('uuid')
   id: string;
