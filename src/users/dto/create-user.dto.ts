@@ -3,6 +3,7 @@ import { UserEntity } from '../entities/user.entity';
 import { IsString, Length } from 'class-validator';
 import { stringValidationMessage } from 'src/common/message/string-validation.message';
 import { legnthValidationMessage } from 'src/common/message/length-validation.message';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto extends PickType(UserEntity, [
   'userId',
@@ -11,13 +12,22 @@ export class CreateUserDto extends PickType(UserEntity, [
 ]) {
   @Length(6, 20, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
+  @ApiProperty({
+    example: "testUser"
+  })
   userId: string;
 
   @Length(8, 20, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
+  @ApiProperty({
+    example: "testPw"
+  })
   userPw: string;
 
   @Length(4, 30, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
+  @ApiProperty({
+    example: "testName"
+  })
   userName: string;
 }

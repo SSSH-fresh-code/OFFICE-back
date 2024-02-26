@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UseFilters,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { InternalServerErrorExceptionFilter } from 'src/common/exception/Internal.error';
 
 @ApiTags('users')
 @Controller('users')

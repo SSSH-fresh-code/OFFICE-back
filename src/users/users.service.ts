@@ -1,21 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, UseFilters } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ContextUtils } from '@nestjs/core/helpers/context-utils';
+import { Console } from 'console';
+import { AuthsExternalService } from 'src/auths/auths.external';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly authService: AuthsExternalService
   ) { }
 
-  create(createUserDto: CreateUserDto) {
-    const createUser = this.userRepository.create(createUserDto);
+  async create(createUserDto: CreateUserDto) {
+    const createUser = await this.userRepository.create(createUserDto);
 
-    const user = this.userRepository.save(createUser);
+    createUser.userPw = await this.authService.encryptPassword(createUser.userPw);
+
+    const user = await this.userRepository.save(createUser);
 
     return user;
   }

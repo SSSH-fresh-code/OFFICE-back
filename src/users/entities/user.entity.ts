@@ -9,6 +9,7 @@ export class UserEntity extends BaseEntity implements TUsers {
 
   @Column({
     nullable: false,
+    unique: true,
   })
   userId: string;
 
@@ -19,6 +20,7 @@ export class UserEntity extends BaseEntity implements TUsers {
 
   @Column({
     nullable: false,
+    unique: true,
   })
   userName: string;
 
