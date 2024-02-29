@@ -12,7 +12,7 @@ import { UserEntity } from './users/entities/user.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: ['.env.local', '.env.development', '.env'],
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
