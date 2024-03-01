@@ -1,3 +1,7 @@
 export enum TokenType {
-  ACCESS, REFRESH
+  ACCESS = "ACCESS", REFRESH = "REFRESH"
+}
+
+export enum TokenPrefixType {
+  BASIC = "Basic", BEARER = "Bearer"
 }

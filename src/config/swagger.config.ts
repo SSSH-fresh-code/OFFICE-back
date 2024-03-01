@@ -4,29 +4,26 @@ export const swaggerConfig = new DocumentBuilder()
   .setTitle('OFFICE SWAGGER')
   .setDescription('SSSH OFFICE 테스트용 스웨거')
   .setVersion('0.0.1')
-  // .addBasicAuth(
-  //   {
-  //     type: 'http',
-  //     name: 'token',
-  //     'x-tokenName': 'token',
-  //   },
-  //   'token',
-  // )
-  // .addBearerAuth(
-  //   {
-  //     type: 'http',
-  //     name: 'refresh',
-  //   },
-  //   'refresh',
-  // )
-  // .addBearerAuth(
-  //   {
-  //     type: 'http',
-  //     name: 'access',
-  //   },
-  //   'access',
-  // )
-  // .addTag('auth')
-  // .addTag('posts')
+  .addBasicAuth(
+    {
+      type: 'http',
+      name: 'login',
+    },
+    'login',
+  )
+  .addBearerAuth(
+    {
+      type: 'http',
+      name: 'refresh',
+    },
+    'refresh',
+  )
+  .addBearerAuth(
+    {
+      type: 'http',
+      name: 'access',
+    },
+    'access',
+  )
   .addTag('users')
   .build();

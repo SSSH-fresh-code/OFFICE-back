@@ -6,28 +6,38 @@ import {
   Patch,
   Param,
   Delete,
-  UseFilters,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiBody, ApiTags } from '@nestjs/swagger';
-import { InternalServerErrorExceptionFilter } from 'src/common/exception/Internal.error';
+import { ApiBasicAuth, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/common/decorator/roles.decorator';
+import { User } from 'src/common/decorator/user.decorator';
+import { TBasicToken } from 'types-sssh';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
+  @Get('login')
+  @Roles('GUEST')
+  @ApiBasicAuth('login')
+  async login(@User() user: TBasicToken) {
+    return this.usersService.login(user);
+  }
+
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Roles('GUEST')
+  register(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.register(createUserDto);
   }
 
   @Get()
+  @Roles('MANAGER')
+  @ApiBearerAuth('access')
   findAll() {
-    return this.usersService.findAll();
+    return "로그인을 하였구나!";
   }
 
   @Get(':id')
