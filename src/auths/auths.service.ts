@@ -1,12 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
-import { TokenType } from "./const/token.const";
-import { genSalt, hash } from 'bcrypt';
+import { TokenPrefixType, TokenType } from "./const/token.const";
+import { compare, genSalt, hash } from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
+import { TTokenPayload } from 'types-sssh';
 
 @Injectable()
 export class AuthsService {
-  constructor(private readonly jwtService: JwtService) { }
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
+  ) { }
 
   async encryptPassword(password: string) {
     try {
@@ -26,7 +31,7 @@ export class AuthsService {
    * @returns 토큰 string
    */
   signToken(user: Pick<UserEntity, "id" | "userRole">, tokenType: TokenType) {
-    const payload = {
+    const payload: TTokenPayload = {
       id: user.id,
       userRole: user.userRole,
       type: tokenType,
@@ -39,9 +44,71 @@ export class AuthsService {
       expiresIn = 999999999;
     }
 
-    return this.jwtService.signAsync(payload, {
-      secret: process.env.JWT_SECRET,
+    return this.jwtService.sign(payload, {
       expiresIn: expiresIn
     });
+  }
+
+  /**
+   * Reuqest Header 내 Authorization 토큰 내용 추출
+   * @param authorizationInHeader 
+   * @returns string Token Prefix를 제외한 토큰 내용
+   */
+  extractTokenFromHeader(authorizationInHeader: string) {
+    const splitToken = authorizationInHeader.split(' ');
+
+    if (splitToken.length !== 2) {
+      throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
+    }
+
+    let tokenPrefix = TokenPrefixType.BASIC;
+
+    switch (splitToken[0]) {
+      case TokenPrefixType.BASIC:
+        break;
+      case TokenPrefixType.BEARER:
+        tokenPrefix = TokenPrefixType.BEARER
+        break;
+      default:
+        throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
+    }
+
+    return {
+      prefix: tokenPrefix, token: splitToken[1]
+    }
+  }
+
+  /**
+   * Basic Token 해석
+   * @param token 
+   * @returns userId: string, userPw: string
+   */
+  decodeBasicToken(token: string) {
+    const decoded = Buffer.from(token, 'base64').toString('utf8');
+
+    const splitStr = decoded.split(':');
+
+    if (splitStr.length !== 2) {
+      throw new UnauthorizedException('잘못된 유형의 Basic 토큰입니다.');
+    }
+
+    const userId = splitStr[0];
+    const userPw = splitStr[1];
+
+    return { userId, userPw };
+  }
+
+  /**
+   * AccessToken 검증 및 변환
+   * @param token 
+   * @returns TTokenPayload 토큰 내 payload
+   */
+  verifyAccessToken(token: string) {
+    try {
+      return this.jwtService.verify<TTokenPayload>(token);
+    } catch (e) {
+      console.log(e);
+      throw new UnauthorizedException('만료된 토큰이거나 잘못된 토큰입니다.');
+    }
   }
 }
