@@ -32,15 +32,18 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
+
     if (!requireRole) requireRole = "ADMIN";
 
 
-    const { user } = context.switchToHttp().getRequest();
+    if (requireRole !== "GUEST") {
+      const { user } = context.switchToHttp().getRequest();
 
-    if (!user) throw new UnauthorizedException('사용자 정보가 존재하지 않습니다.');
+      if (!user) throw new UnauthorizedException('사용자 정보가 존재하지 않습니다.');
 
-    if (!this.checkRole(requireRole, user.role)) {
-      throw new ForbiddenException('잘못된 접근입니다.');
+      if (!this.checkRole(requireRole, user.userRole)) {
+        throw new ForbiddenException('잘못된 접근입니다.');
+      }
     }
 
     return true;
@@ -59,7 +62,7 @@ export class RolesGuard implements CanActivate {
    */
   checkRole(requireRole: TUserRole, role: any): boolean {
     if (!role) return false;
-    if (requireRole === "GUEST" || requireRole === role) return true;
+    if (requireRole === role) return true;
 
     switch (requireRole) {
       case "MANAGER":
