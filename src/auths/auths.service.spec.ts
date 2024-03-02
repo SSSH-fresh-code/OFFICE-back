@@ -19,7 +19,7 @@ describe('AuthsService', () => {
     jwtService = module.get<JwtService>(JwtService);
   });
 
-  it('should be defined', () => {
+  it('[정상케이스] should be defined', () => {
     expect(service).toBeDefined();
     expect(jwtService).toBeDefined();
   });
@@ -27,12 +27,12 @@ describe('AuthsService', () => {
   describe('encryptPassword - 패스워드 암호화', () => {
     const password = "test";
 
-    it('암호화가 문제없이 수행되는가?', async () => {
+    it('[정상케이스] 암호화가 문제없이 수행되는가?', async () => {
       const encryptPassword = await service.encryptPassword(password);
       expect(!!encryptPassword).toBeTruthy();
     })
 
-    it('입력 패스워드와 암호화된 패스워드가 다른가?', async () => {
+    it('[정상케이스] 입력 패스워드와 암호화된 패스워드가 다른가?', async () => {
       const encryptPassword = await service.encryptPassword(password);
       expect(encryptPassword === password).toBeFalsy();
     });
@@ -44,19 +44,19 @@ describe('AuthsService', () => {
       userRole: "ADMIN"
     }
 
-    it('ACCESS 토큰 생성이 문제없이 수행되는가?', async () => {
+    it('[정상케이스] ACCESS 토큰 생성이 문제없이 수행되는가?', async () => {
       const token = await service.signToken(user, TokenType.ACCESS);
 
       expect(token).toBeDefined();
     });
 
-    it('REFRESH 토큰 생성이 문제없이 수행되는가?', async () => {
+    it('[정상케이스] REFRESH 토큰 생성이 문제없이 수행되는가?', async () => {
       const token = await service.signToken(user, TokenType.REFRESH);
 
       expect(token).toBeDefined();
     });
 
-    it('유효한 토큰이 생성되는가?', async () => {
+    it('[정상케이스] 유효한 토큰이 생성되는가?', async () => {
       const token = await service.signToken(user, TokenType.REFRESH);
 
       expect(await jwtService.verify(token)).toBeDefined();
