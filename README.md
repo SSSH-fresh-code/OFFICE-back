@@ -1,73 +1,34 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# SSSH BACK-OFFICE
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 기능
+1. 유저 관리 기능
+  - **JWT**를 사용한 ACCESS/REFESH TOKEN 구조
+    - ACCESS TOKEN을 사용하여 권한 조정
+    - REFESH TOKEN은 **REDIS**를 사용하여 등록되어있는 토큰인지 확인_(개발중)_
+  - 권한에 따라 API 접근 기능(기본적으로 전부 PRIVATE API)
+2. 인스타그램 관리 기능_(개발중)_
+  - 인스타그램 계정 관련 노티(슬랙과 연동 예정)
+  - 개발 내용 크롤링 및 요약 후 제공
+  - 해당 내용을 토대로 이미지 생성(RUST?)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 아키텍처
+![아키텍처_architecture](./documents/architecture.jpg)
 
-## Description
+## 구동방법
+- 개발환경 세팅
+  1. VSCODE DevContainer 사용하여 컨테이너에서 개발
+  2. 다른 IDE를 사용하는 경우 로컬 PC에 아래 환경 설치
+    - node v18.19.0, npm 사용
+    - TS 관련 세팅은 package.json 참조
+    - npm install -g @nestjs/cli
+    - postgres 15.6 DB 세
+- 구동
+  1. 로컬 구동
+    - 환경 변수 파일(왼쪽부터 존재하는 파일인 경우 적용) : .env.local, .env.development, .env팅
+      - 환경 변수 파일 내 DB 정보 세팅
+    - `npm run start:dev` 를 통해 --watch로 구동
+  2. 서버에서 구동(linux)
+    - 루트 경로의 docker-compose.yml와 Dockerfile을 사용하여 구동
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ npm install
-```
-
-## Running the app
-
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+## 주의점
+- SSSH 프로젝트에서 전역적으로 사용할 타입인 경우 @types/sssh 프로젝트에 추가하여 사용
