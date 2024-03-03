@@ -3,7 +3,6 @@ import { UsersService } from './users.service';
 import { Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { AuthsModule } from 'src/auths/auths.module';
 import { AuthsService } from 'src/auths/auths.service';
 import { genSalt, hash } from 'bcrypt';
 import { randomUUID } from 'crypto';
@@ -11,6 +10,7 @@ import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { TokenPrefixType } from 'src/auths/const/token.const';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CommonModule } from 'src/common/common.module';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -19,6 +19,7 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [CommonModule],
       providers: [UsersService,
         {
           provide: getRepositoryToken(UserEntity),
@@ -91,16 +92,6 @@ describe('UsersService', () => {
     });
   });
 
-  describe('findUserByUserId - UserId로 유저 조회', () => {
-    const userId = "test";
-
-    it('[정상케이스] userId가 존재하는 경우', async () => {
-      const user = await service.findUserByUserId(userId);
-
-      expect(user).toBeDefined();
-      expect(user.userId).toEqual(userId);
-    });
-  });
 
   /**
    * TODO : 추후 refresh 토큰 redis 도입 되면 작성

@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { TUsers, TUserRole } from 'types-sssh';
@@ -14,6 +15,7 @@ export class UserEntity extends BaseEntity implements TUsers {
   userId: string;
 
   @Column({
+    select: false,
     nullable: false,
   })
   userPw: string;

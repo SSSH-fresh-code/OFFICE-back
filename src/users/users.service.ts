@@ -1,18 +1,22 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthsService } from '../auths/auths.service';
 import { compare } from 'bcrypt';
 import { TokenPrefixType, TokenType } from '../auths/const/token.const';
-import { TBasicToken } from 'types-sssh';
+import { TBasicToken, TTokenPayload } from 'types-sssh';
+import { UserPaginationDto } from './dto/user-pagination.dto';
+import { CommonService } from 'src/common/common.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    private readonly commonService: CommonService,
     private readonly authsService: AuthsService
   ) { }
 
@@ -44,7 +48,7 @@ export class UsersService {
     const { userId, userName, userPw } = createUserDto;
 
     /** id, name 중복검사 */
-    await this.duplicateCheckInRegister(userId, userName);
+    await this.duplicateCheck(userId, userName);
 
     const createUser = await this.createUser(createUserDto);
 
@@ -58,15 +62,6 @@ export class UsersService {
         userPw: userPw
       }
     );
-  }
-
-  /**
-   * userId로 유저 조회
-   * @param userId 
-   * @returns Promise<UserEntity>
-   */
-  findUserByUserId(userId: string) {
-    return this.usersRepository.findOne({ where: { userId } });
   }
 
   /**
@@ -85,7 +80,100 @@ export class UsersService {
     }
   }
 
+  /**
+   * 유저 전체 조회
+   * 페이징 적용으로 인한 CommonModule 의존
+   * @param page UserPaginationDto
+   * @returns Promise<PaginationResult<UserEntity>>
+   */
+  findUsers(page: UserPaginationDto) {
+    const options: FindManyOptions<UserEntity> = {
+      select: ["id", "userId", "userPw", "userRole", "createdAt", "updatedAt"]
+    }
+    return this.commonService.paginate<UserEntity>(page, this.usersRepository, options);
+  }
 
+  /**
+   * 유저ID로 유저 조회
+   * 1) 관리자인 경우 -> 자신보다 윗 등급의 유저 권한 조회 불가
+   * 2) 관리자가 아닌 경우 -> 자신의 계정이 아니면 조회 불가
+   * @param user TTokenPayload 
+   * @param id string
+   * @returns 
+   */
+  async findUser(user: TTokenPayload, id: string) {
+    const u = await this.usersRepository.findOneOrFail({
+      where: { id }
+    });
+
+    if (["ADMIN", "MANAGER"].includes(user.userRole)) {
+      if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+        throw new ForbiddenException("조회 권한이 존재하지 않습니다.");
+      }
+    } else if (user.id !== id) {
+      throw new ForbiddenException("조회 권한이 존재하지 않습니다.");
+    }
+
+    return u;
+  }
+
+  /**
+   * user 업데이트
+   * - 관리자인 경우
+   *    1) 자신보다 권한이 높은 유저의 정보 수정 불가능
+   *    2) 자신보다 높은 권한으로 정보 수정 불가능
+   * - 일반 유저인 경우
+   *    1) 자신의 계정만 수정 가능(아이디 체크)
+   *    2) 자체적으로 권한 수정 불가능
+   * @param user 
+   * @param dto 
+   * @returns 
+   */
+  async updateUser(user: TTokenPayload, dto: UpdateUserDto) {
+    const u = await this.usersRepository.findOneOrFail({
+      where: { id: dto.id }
+    });
+
+    if (["ADMIN", "MANAGER"].includes(user.userRole)) {
+      if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+        throw new ForbiddenException("ADMIN 계정은 수정할 수 없습니다.");
+      };
+      if (dto.userRole && !this.authsService.checkRole(dto.userRole, user.userRole)) {
+        throw new ForbiddenException("수정 권한이 존재하지 않습니다.");
+      }
+    } else if (user.id !== u.id) {
+      throw new ForbiddenException("자신의 계정만 수정할 수 있습니다.");
+    } else if (dto.userRole) {
+      throw new ForbiddenException("권한을 수정할 수 없습니다.");
+    }
+
+    // userName 중복 체크
+    await this.duplicateCheck("", dto.userName)
+
+    return await this.usersRepository.save({ ...u, ...dto });
+  }
+
+  /**
+   * user 삭제
+   * 현재 ADMIN만 삭제가 가능하나 추후 MANAGER 권한 오픈을 염두에 두고 
+   * 권한 체크 로직 주석 처리로 남겨놓음
+   * @param user TTokenPayload
+   * @param id string 
+   * @returns 
+   */
+  async deleteUser(user: TTokenPayload, id: string) {
+    const u = await this.usersRepository.findOneOrFail({
+      where: { id }
+    });
+
+    // if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+    //   throw new ForbiddenException("삭제 권한이 없습니다.");
+    // }
+
+    await this.usersRepository.delete(u.id);
+
+    return true;
+  }
   /**
    * findUserByUserId를 사용하여 존재하는 유저인지 체크
    * 그 후에 찾은 유저 데이터를 반환
@@ -93,7 +181,7 @@ export class UsersService {
    * @returns Promise<UserEntity> 
    */
   private async existCheckInLogin(userId: string) {
-    const user = await this.findUserByUserId(userId);
+    const user = await this.usersRepository.findOne({ select: ["id", "userRole", "userPw"], where: { userId } });
 
     if (!user) throw new UnauthorizedException("존재하지 않는 아이디 입니다.");
 
@@ -119,10 +207,10 @@ export class UsersService {
    * @param userName 
    * @throws BadRequestException
    */
-  private async duplicateCheckInRegister(userId: string, userName: string): Promise<void> {
-    if (await this.existsUser({ userId: userId })) {
+  private async duplicateCheck(userId?: string, userName?: string): Promise<void> {
+    if (userId && await this.existsUser({ userId: userId })) {
       throw new BadRequestException("이미 존재하는 ID 입니다.");
-    } else if (await this.existsUser({ userName: userName })) {
+    } else if (userName && await this.existsUser({ userName: userName })) {
       throw new BadRequestException("이미 존재하는 닉네임 입니다.");
     }
   }
