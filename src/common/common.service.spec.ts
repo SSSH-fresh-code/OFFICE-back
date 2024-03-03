@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommonService } from './common.service';
+import { UserEntity } from 'src/users/entities/user.entity';
+import { UserPaginationDto } from 'src/users/dto/user-pagination.dto';
 
 describe('CommonService', () => {
   let service: CommonService;
