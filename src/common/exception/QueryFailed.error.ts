@@ -3,9 +3,8 @@ import { format } from "sql-formatter";
 import { CustomRepositoryCannotInheritRepositoryError, QueryFailedError } from "typeorm";
 
 @Catch(QueryFailedError)
-export class InternalServerErrorExceptionFilter implements ExceptionFilter {
+export class QueryFailedErrorFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
-
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();

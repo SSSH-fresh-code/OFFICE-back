@@ -2,7 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerConfig } from './config/swagger.config';
-import { InternalServerErrorExceptionFilter } from './common/exception/Internal.error';
+import { QueryFailedErrorFilter } from './common/exception/QueryFailed.error';
+import { EntityNotFoundError } from 'typeorm';
+import { EntityNotFoundErrorFilter } from './common/exception/EntityNotFound.error';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,7 +13,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   /** Filters */
-  app.useGlobalFilters(new InternalServerErrorExceptionFilter());
+  app.useGlobalFilters(new QueryFailedErrorFilter());
+  app.useGlobalFilters(new EntityNotFoundErrorFilter());
 
   await app.listen(3000);
 }

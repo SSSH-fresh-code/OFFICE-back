@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorator/roles.decorator';
 import { TUserRole } from 'types-sssh';
+import { AuthsService } from 'src/auths/auths.service';
 
 /**
  * 권한 검사를 위한 Guard
@@ -16,7 +17,7 @@ import { TUserRole } from 'types-sssh';
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) { }
+  constructor(private readonly reflector: Reflector, private readonly authsService: AuthsService) { }
 
   /**
    * reflect-metadata를 이용한 권한 검사 가드
@@ -41,7 +42,7 @@ export class RolesGuard implements CanActivate {
 
       if (!user) throw new UnauthorizedException('사용자 정보가 존재하지 않습니다.');
 
-      if (!this.checkRole(requireRole, user.userRole)) {
+      if (!this.authsService.checkRole(requireRole, user.userRole)) {
         throw new ForbiddenException('잘못된 접근입니다.');
       }
     }
@@ -49,28 +50,4 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 
-  /**
-   * 유저 권한 체크 로직
-   * 1) 현재 권한이 없는 경우 false
-   * 2) requireRole이 Guest이거나(public) 현재 권한과 같은 경우 true
-   * 3) 매니저, 유저 인 경우 상위 권한은 true 
-   * 4) 위 결과에 모두 충족하지 못할 경우(있을 수 없음) false
-   * @author sssh
-   * @param requireRole 필요 권한
-   * @param role 현재 권한
-   * @returns 권한 통과 여부
-   */
-  checkRole(requireRole: TUserRole, role: any): boolean {
-    if (!role) return false;
-    if (requireRole === role) return true;
-
-    switch (requireRole) {
-      case "MANAGER":
-        return role === "ADMIN";
-      case "USER":
-        return role === "ADMIN" || role === "MANAGER";
-    }
-
-    return false;
-  }
 }

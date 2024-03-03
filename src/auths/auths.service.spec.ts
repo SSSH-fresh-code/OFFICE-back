@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { TokenType } from './const/token.const';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 
 describe('AuthsService', () => {
   let service: AuthsService;
@@ -11,7 +12,7 @@ describe('AuthsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule.register({ secret: "test" })],
+      imports: [ConfigModule, JwtModule.register({ secret: "test" })],
       providers: [AuthsService],
     }).compile();
 
