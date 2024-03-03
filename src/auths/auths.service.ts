@@ -4,7 +4,7 @@ import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
 import { compare, genSalt, hash } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { TTokenPayload } from 'types-sssh';
+import { TTokenPayload, TUserRole } from 'types-sssh';
 
 @Injectable()
 export class AuthsService {
@@ -110,5 +110,30 @@ export class AuthsService {
       console.log(e);
       throw new UnauthorizedException('만료된 토큰이거나 잘못된 토큰입니다.');
     }
+  }
+
+  /**
+   * 유저 권한 체크 로직
+   * 1) 현재 권한이 없는 경우 false
+   * 2) requireRole이 Guest이거나(public) 현재 권한과 같은 경우 true
+   * 3) 매니저, 유저 인 경우 상위 권한은 true 
+   * 4) 위 결과에 모두 충족하지 못할 경우(있을 수 없음) false
+   * @author sssh
+   * @param requireRole 필요 권한
+   * @param role 현재 권한
+   * @returns 권한 통과 여부
+   */
+  checkRole(requireRole: TUserRole, role: any): boolean {
+    if (!role) return false;
+    if (requireRole === role) return true;
+
+    switch (requireRole) {
+      case "MANAGER":
+        return role === "ADMIN";
+      case "USER":
+        return role === "ADMIN" || role === "MANAGER";
+    }
+
+    return false;
   }
 }
