@@ -87,10 +87,7 @@ export class UsersService {
    * @returns Promise<PaginationResult<UserEntity>>
    */
   findUsers(page: UserPaginationDto) {
-    const options: FindManyOptions<UserEntity> = {
-      select: ["id", "userId", "userPw", "userRole", "createdAt", "updatedAt"]
-    }
-    return this.commonService.paginate<UserEntity>(page, this.usersRepository, options);
+    return this.commonService.paginate<UserEntity>(page, this.usersRepository);
   }
 
   /**
