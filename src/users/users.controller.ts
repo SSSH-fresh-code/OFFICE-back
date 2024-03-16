@@ -8,6 +8,9 @@ import {
   Delete,
   Query,
   BadRequestException,
+  DefaultValuePipe,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,7 +20,7 @@ import { Roles } from 'src/common/decorator/roles.decorator';
 import { User } from 'src/common/decorator/user.decorator';
 import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
-import { FindManyOptions, FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 
 @ApiTags('users')

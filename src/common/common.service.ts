@@ -12,16 +12,25 @@ export class CommonService {
     repo: Repository<T>,
     overrideFindOptions?: FindManyOptions<T>
   ): Promise<PaginationResult<T>> {
-    const findOptions = this.composeFindOptions<T>(dto);
-
-    const [data, count] = await repo.findAndCount({
-      ...findOptions,
+    const findOptions = {
+      ...this.composeFindOptions<T>(dto),
       ...overrideFindOptions
-    });
+    }
+
+    const take = findOptions.take;
+
+    const [data, count] = await repo.findAndCount(findOptions);
+
+    const lastPage = Math.ceil(count / take);
 
     return {
       data,
-      total: count,
+      info: {
+        take: dto.take,
+        current: dto.page,
+        last: lastPage,
+        total: count
+      }
     };
   }
 

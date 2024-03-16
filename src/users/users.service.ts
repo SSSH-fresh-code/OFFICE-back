@@ -163,9 +163,9 @@ export class UsersService {
       where: { id }
     });
 
-    // if (!this.authsService.checkRole(u.userRole, user.userRole)) {
-    //   throw new ForbiddenException("삭제 권한이 없습니다.");
-    // }
+    if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+      throw new ForbiddenException("삭제 권한이 없습니다.");
+    }
 
     await this.usersRepository.delete(u.id);
 
