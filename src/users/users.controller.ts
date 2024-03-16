@@ -28,7 +28,7 @@ import { UserEntity } from './entities/user.entity';
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
-  @Get('login')
+  @Post('login')
   @Roles('GUEST')
   @ApiBasicAuth('login')
   async login(@User() user: TBasicToken) {
