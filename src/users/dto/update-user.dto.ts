@@ -11,19 +11,17 @@ export class UpdateUserDto extends PickType(UserEntity, [
   'userName',
   'userRole'
 ]) {
-  @Length(6, 20, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
   @ApiProperty({
     example: "cf03e1c8-4ea3-471d-ac1d-d652c426a23a"
   })
   id: string;
 
-  @Length(8, 20, { message: legnthValidationMessage })
+  @Length(2, 10, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
   @ApiProperty({ example: "" })
   userName: string;
 
-  @Length(4, 30, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
   @ApiProperty({ example: "" })
   userRole: TUserRole;

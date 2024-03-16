@@ -131,6 +131,7 @@ export class UsersService {
       where: { id: dto.id }
     });
 
+
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
         throw new ForbiddenException("ADMIN 계정은 수정할 수 없습니다.");
@@ -145,7 +146,7 @@ export class UsersService {
     }
 
     // userName 중복 체크
-    await this.duplicateCheck("", dto.userName)
+    if (u.userName !== dto.userName) { await this.duplicateCheck("", dto.userName) }
 
     return await this.usersRepository.save({ ...u, ...dto });
   }
