@@ -10,6 +10,7 @@ import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CertUserDto } from './dto/cert-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -26,7 +27,7 @@ export class UsersService {
    * @returns accessToken, refreshToken
    */
   async login(user: TBasicToken) {
-    const existingUser = await this.existCheckInLogin(user.userId);
+    const existingUser = await this.validationInLogin(user.userId);
 
     await this.comparePw(user.userPw, existingUser.userPw);
 
@@ -131,6 +132,7 @@ export class UsersService {
       where: { id: dto.id }
     });
 
+
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
         throw new ForbiddenException("ADMIN 계정은 수정할 수 없습니다.");
@@ -145,7 +147,12 @@ export class UsersService {
     }
 
     // userName 중복 체크
-    await this.duplicateCheck("", dto.userName)
+    if (u.userName !== dto.userName) { await this.duplicateCheck("", dto.userName) }
+
+    // pw 초기화
+    if (dto.isPwReset) {
+      u.userPw = await this.authsService.encryptPassword("a12345678")
+    }
 
     return await this.usersRepository.save({ ...u, ...dto });
   }
@@ -171,16 +178,32 @@ export class UsersService {
 
     return true;
   }
+
+  async certUser(certUserDto: CertUserDto) {
+    console.log(certUserDto)
+    const u = await this.usersRepository.findOneOrFail({
+      where: { id: certUserDto.id }
+    });
+
+    if (!u) throw new UnauthorizedException("존재하지 않는 유저입니다.");
+    else if (u.isCertified) throw new UnauthorizedException("이미 인증된 유저입니다.");
+
+    return this.usersRepository.save({ ...u, isCertified: true, userRole: certUserDto.userRole })
+  }
+
   /**
-   * findUserByUserId를 사용하여 존재하는 유저인지 체크
+   * - findUserByUserId를 사용하여 존재하는 유저인지 체크
+   * - 승인된 유저인지 체크
    * 그 후에 찾은 유저 데이터를 반환
    * @param userId 
    * @returns Promise<UserEntity> 
    */
-  private async existCheckInLogin(userId: string) {
-    const user = await this.usersRepository.findOne({ select: ["id", "userRole", "userPw"], where: { userId } });
+  private async validationInLogin(userId: string) {
+    const user = await this.usersRepository.findOne({ select: ["id", "userRole", "userPw", "isCertified"], where: { userId } });
 
     if (!user) throw new UnauthorizedException("존재하지 않는 아이디 입니다.");
+    else if (!user.isCertified) throw new ForbiddenException("승인되지 않은 유저입니다.\n관리자에게 문의해주세요.")
+    else if (this.authsService.checkRole("MANAGER", user.userRole)) throw new ForbiddenException("접근 권한이 없는 유저입니다.")
 
     return user;
   }

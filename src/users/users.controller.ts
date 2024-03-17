@@ -15,20 +15,21 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiBasicAuth, ApiBearerAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { User } from 'src/common/decorator/user.decorator';
 import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
+import { CertUserDto } from './dto/cert-user.dto';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
-  @Get('login')
+  @Post('login')
   @Roles('GUEST')
   @ApiBasicAuth('login')
   async login(@User() user: TBasicToken) {
@@ -39,6 +40,13 @@ export class UsersController {
   @Roles('GUEST')
   register(@Body() createUserDto: CreateUserDto) {
     return this.usersService.register(createUserDto);
+  }
+
+  @Post("cert")
+  @Roles('MANAGER')
+  @ApiBearerAuth('access')
+  certUser(@Body() certUserDto: CertUserDto) {
+    return this.usersService.certUser(certUserDto);
   }
 
   @Get("exists")
