@@ -26,6 +26,12 @@ export class UserEntity extends BaseEntity implements TUsers {
   })
   userName: string;
 
+  @Column({
+    type: "boolean",
+    default: false
+  })
+  isCertified: boolean;
+
   @Column({ default: 'USER' })
   userRole: TUserRole;
 }
