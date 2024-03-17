@@ -9,5 +9,5 @@ export class PaginationDto {
 
   @IsNumber()
   @ApiProperty({ name: "take", type: "number", default: 20 })
-  take: number = 2;
+  take: number = 10;
 }
