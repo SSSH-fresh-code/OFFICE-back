@@ -1,6 +1,6 @@
 import { PickType } from '@nestjs/mapped-types';
 import { UserEntity } from '../entities/user.entity';
-import { IsString, Length } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 import { legnthValidationMessage } from 'src/common/message/length-validation.message';
 import { stringValidationMessage } from 'src/common/message/string-validation.message';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
@@ -25,4 +25,24 @@ export class UpdateUserDto extends PickType(UserEntity, [
   @IsString({ message: stringValidationMessage })
   @ApiProperty({ example: "" })
   userRole: TUserRole;
+
+  @IsBoolean()
+  @ApiProperty({ example: false })
+  isPwReset: boolean;
+
+  // TODO: 추후에 비밀번호 변경 따로 만들 때 사용하기
+  // @Length(4, undefined, { message: legnthValidationMessage })
+  // @IsOptional()
+  // @ApiProperty({ nullable: true, example: "" })
+  // userPw?: string;
+
+  // @Length(4, undefined, { message: legnthValidationMessage })
+  // @IsOptional()
+  // @ApiProperty({ nullable: true, example: "" })
+  // newPw?: string;
+
+  // @Length(4, undefined, { message: legnthValidationMessage })
+  // @IsOptional()
+  // @ApiProperty({ nullable: true, example: "" })
+  // newPwRe?: string;
 }

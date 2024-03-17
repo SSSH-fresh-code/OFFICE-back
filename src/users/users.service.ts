@@ -148,6 +148,11 @@ export class UsersService {
     // userName 중복 체크
     if (u.userName !== dto.userName) { await this.duplicateCheck("", dto.userName) }
 
+    // pw 초기화
+    if (dto.isPwReset) {
+      u.userPw = await this.authsService.encryptPassword("a12345678")
+    }
+
     return await this.usersRepository.save({ ...u, ...dto });
   }
 
@@ -163,6 +168,7 @@ export class UsersService {
     const u = await this.usersRepository.findOneOrFail({
       where: { id }
     });
+    console.log(id);
 
     if (!this.authsService.checkRole(u.userRole, user.userRole)) {
       throw new ForbiddenException("삭제 권한이 없습니다.");
