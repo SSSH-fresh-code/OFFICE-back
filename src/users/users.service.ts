@@ -179,16 +179,15 @@ export class UsersService {
     return true;
   }
 
-  async certUser(certUserDto: CertUserDto) {
-    console.log(certUserDto)
-    const u = await this.usersRepository.findOneOrFail({
-      where: { id: certUserDto.id }
+  async certUser(idList: string[]) {
+    if (!idList) throw new BadRequestException("체크 된 값이 없습니다.");
+
+    const u = await this.usersRepository.update(idList, {
+      isCertified: true,
+      userRole: "USER"
     });
 
-    if (!u) throw new UnauthorizedException("존재하지 않는 유저입니다.");
-    else if (u.isCertified) throw new UnauthorizedException("이미 인증된 유저입니다.");
-
-    return this.usersRepository.save({ ...u, isCertified: true, userRole: certUserDto.userRole })
+    return u;
   }
 
   /**

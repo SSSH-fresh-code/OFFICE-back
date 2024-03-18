@@ -45,8 +45,8 @@ export class UsersController {
   @Post("cert")
   @Roles('MANAGER')
   @ApiBearerAuth('access')
-  certUser(@Body() certUserDto: CertUserDto) {
-    return this.usersService.certUser(certUserDto);
+  certUser(@Body('idList') idList: string[]) {
+    return this.usersService.certUser(idList);
   }
 
   @Get("exists")

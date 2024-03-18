@@ -32,6 +32,6 @@ export class UserEntity extends BaseEntity implements TUsers {
   })
   isCertified: boolean;
 
-  @Column({ default: 'USER' })
+  @Column({ default: 'GUEST' })
   userRole: TUserRole;
 }

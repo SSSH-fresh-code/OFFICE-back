@@ -12,6 +12,6 @@ export class UserPaginationDto extends PaginationDto {
   where__title?: string;
 
   @IsOptional()
-  @ApiProperty({ name: "not__isCertified", type: "boolean", required: false, default: false })
-  where__isCertified?: boolean = false;
+  @ApiProperty({ name: "where__isCertified", type: "boolean", required: false, default: "true" })
+  where__isCertified?: string;
 }
