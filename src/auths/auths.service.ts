@@ -107,8 +107,7 @@ export class AuthsService {
     try {
       return this.jwtService.verify<TTokenPayload>(token);
     } catch (e) {
-      console.log(e);
-      throw new UnauthorizedException('만료된 토큰이거나 잘못된 토큰입니다.');
+      throw new UnauthorizedException('만료된 토큰입니다.');
     }
   }
 
