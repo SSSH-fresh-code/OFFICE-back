@@ -1,10 +1,11 @@
 import {
   CanActivate,
+  ConsoleLogger,
   ExecutionContext,
   Injectable,
 } from '@nestjs/common';
 import { AuthsService } from 'src/auths/auths.service';
-import { TokenPrefixType } from 'src/auths/const/token.const';
+import { TokenPrefixType, TokenType } from 'src/auths/const/token.const';
 
 /**
  * Token이 존재하는 경우 request 객체 내 user 멤버 객체 생성
@@ -23,7 +24,10 @@ export class TokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    const rawToken = request.headers['authorization'];
+    // authorization 토큰이 있다면 우선 설정(로그인, Basic 토큰 사용)
+    const t: string = request.headers['authorization'];
+    // Basic 토큰이 아닌경우 Cookie에서 가져옴
+    let rawToken = t ? t : this.getTokenInCookie(request.headers.cookie, "accessToken");
 
     if (!rawToken) return true;
 
@@ -38,8 +42,7 @@ export class TokenGuard implements CanActivate {
         userPw: userPw
       };
     } else {
-      const payload = await this.authsService.verifyAccessToken(token);
-
+      const payload = await this.authsService.verifyToken(token, TokenType.ACCESS);
       request.user = {
         type: prefix,
         ...payload
@@ -49,4 +52,18 @@ export class TokenGuard implements CanActivate {
     return true;
   }
 
+  getTokenInCookie(cookie: string, key: string) {
+    if (cookie) {
+      const cookies = cookie.split(";").filter(c => c.indexOf("accessToken=") !== -1);
+
+      const c = cookies[0];
+
+      if (c) {
+        const value = c.split("=")[1];
+
+        return `Bearer ${value}`
+      }
+    }
+    return false;
+  }
 }

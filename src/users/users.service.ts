@@ -183,6 +183,12 @@ export class UsersService {
     return u;
   }
 
+  refresh(token: string) {
+    const payload = this.authsService.verifyToken(token, TokenType.REFRESH);
+
+    return this.authsService.signToken(payload, TokenType.ACCESS);
+  }
+
   /**
    * - findUserByUserId를 사용하여 존재하는 유저인지 체크
    * - 승인된 유저인지 체크
