@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
@@ -55,7 +55,7 @@ export class AuthsService {
    * @returns string Token Prefix를 제외한 토큰 내용
    */
   extractTokenFromHeader(authorizationInHeader: string) {
-    const splitToken = authorizationInHeader.split(' ');
+    const splitToken = authorizationInHeader.trim().split(' ');
 
     if (splitToken.length !== 2) {
       throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
@@ -99,16 +99,19 @@ export class AuthsService {
   }
 
   /**
-   * AccessToken 검증 및 변환
+   * token 검증 및 변환
    * @param token 
    * @returns TTokenPayload 토큰 내 payload
    */
-  verifyAccessToken(token: string) {
+  verifyToken(token: string, type: TokenType) {
     try {
-      return this.jwtService.verify<TTokenPayload>(token);
+      const payload = this.jwtService.verify<TTokenPayload>(token);
+      if (type !== payload.type) throw new Error("잘못된 유형의 토큰입니다.");
+      return payload
     } catch (e) {
-      console.log(e);
-      throw new UnauthorizedException('만료된 토큰이거나 잘못된 토큰입니다.');
+      if (e instanceof Error && e.message === "잘못된 유형의 토큰입니다.")
+        throw new BadRequestException(e.message);
+      throw new UnauthorizedException('만료된 토큰입니다.');
     }
   }
 

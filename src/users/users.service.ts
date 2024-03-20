@@ -55,14 +55,7 @@ export class UsersService {
 
     const user = await this.usersRepository.save(createUser);
 
-    /** 생성된 계정으로 로그인 */
-    return await this.login(
-      {
-        type: TokenPrefixType.BASIC,
-        userId: user.userId,
-        userPw: userPw
-      }
-    );
+    return true;
   }
 
   /**
@@ -190,6 +183,12 @@ export class UsersService {
     return u;
   }
 
+  refresh(token: string) {
+    const payload = this.authsService.verifyToken(token, TokenType.REFRESH);
+
+    return this.authsService.signToken(payload, TokenType.ACCESS);
+  }
+
   /**
    * - findUserByUserId를 사용하여 존재하는 유저인지 체크
    * - 승인된 유저인지 체크
@@ -202,7 +201,7 @@ export class UsersService {
 
     if (!user) throw new UnauthorizedException("존재하지 않는 아이디 입니다.");
     else if (!user.isCertified) throw new ForbiddenException("승인되지 않은 유저입니다.\n관리자에게 문의해주세요.")
-    else if (this.authsService.checkRole("MANAGER", user.userRole)) throw new ForbiddenException("접근 권한이 없는 유저입니다.")
+    else if (!this.authsService.checkRole("MANAGER", user.userRole)) throw new ForbiddenException("접근 권한이 없는 유저입니다.")
 
     return user;
   }

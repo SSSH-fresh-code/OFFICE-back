@@ -8,9 +8,7 @@ import {
   Delete,
   Query,
   BadRequestException,
-  DefaultValuePipe,
-  ValidationPipe,
-  UsePipes,
+  Res,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -22,7 +20,7 @@ import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { CertUserDto } from './dto/cert-user.dto';
+import { CookieOptions, Response } from 'express';
 
 @ApiTags('users')
 @Controller('users')
@@ -32,8 +30,41 @@ export class UsersController {
   @Post('login')
   @Roles('GUEST')
   @ApiBasicAuth('login')
-  async login(@User() user: TBasicToken) {
-    return this.usersService.login(user);
+  async login(@User() user: TBasicToken, @Res({ passthrough: true }) response: Response) {
+    const { accessToken, refreshToken } = await this.usersService.login(user);
+    const options: CookieOptions = {
+      secure: process.env.NEST_MODE === "development" ? true : true,
+      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
+      httpOnly: true,
+      path: "/",
+      expires: new Date(new Date().getTime() + 5000000),
+      maxAge: 360000000
+    }
+    response.cookie('accessToken', accessToken, options)
+
+    return { refreshToken }
+  }
+
+  @Post('refresh')
+  @Roles('GUEST')
+  async refresh(
+    @Body() { refreshToken }: { refreshToken: string },
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const accessToken = await this.usersService.refresh(refreshToken);
+
+    const options: CookieOptions = {
+      secure: process.env.NEST_MODE === "development" ? true : true,
+      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
+      httpOnly: true,
+      path: "/",
+      expires: new Date(new Date().getTime() + 5000000),
+      maxAge: 360000000
+    }
+
+    response.cookie('accessToken', accessToken, options)
+    response.cookie('gpgp', 'dd', options)
+    return true;
   }
 
   @Post()
