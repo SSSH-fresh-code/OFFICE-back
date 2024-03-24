@@ -1,0 +1,16 @@
+.devcontainer
+.vscode
+.coverage
+documents
+postgres-data
+src
+test
+.env.local
+.env.sample
+.gitignore
+.eslintrc.js
+.prettierrc
+.npmrc
+nest-cli.json
+README.md
+tsconfig*
