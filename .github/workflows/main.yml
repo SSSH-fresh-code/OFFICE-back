@@ -1,0 +1,42 @@
+name: SSSH-OFFICE BACKEND CD
+on:
+  push:
+    branches: [ main ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v3
+
+      - name: Nodejs 18.x 사용
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - run: echo "${{ secrets.ENV }}" | base64 --decode > ./.env
+      - run: echo "${{ secrets.NPMRC }}" | base64 --decode > ./.npmrc
+      - run: npm install
+      - run: npm run build
+
+      - name: 도커 이미지 빌드
+        run: docker build -t daeseong0226/office-nest .
+
+      - name: 도커허브 로그인
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_ID }}
+          password: ${{ secrets.DOCKER_KEY }}
+
+      - name: 도커허브 퍼블리시
+        run: docker push daeseong0226/office-nest
+
+      - name: WAS 배포
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.WAS_HOST }}
+          username: ${{ secrets.WAS_USERNAME }}
+          key: ${{ secrets.WAS_PEM_KEY }}
+          port: 22
+          script: |
+            sudo sh ~/boot.sh
