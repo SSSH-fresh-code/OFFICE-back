@@ -2,7 +2,7 @@ FROM nginx:1.25.4-alpine-slim
 
 WORKDIR /app
 
-RUN ["apk", "add", "nodejs18"]
+RUN ["apk", "add","--update", "nodejs"]
 
 COPY . .
 
