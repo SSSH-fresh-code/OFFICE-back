@@ -1,9 +1,13 @@
-FROM 18-alpine3.18
+FROM nginx:1.25.4-alpine-slim
 
 WORKDIR /app
 
-COPY .node_modules ./dist .env .package.json .package-lock.json .
+RUN ["apk", "add", "nodejs18"]
+
+COPY . .
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-RUN ["node", "dist/main.js"]
+CMD ["npm","run","start:prod"]

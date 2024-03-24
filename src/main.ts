@@ -8,7 +8,7 @@ import { EntityNotFoundErrorFilter } from './common/exception/EntityNotFound.err
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors({ credentials: true, origin: "http://localhost:5173" })
+  app.enableCors({ credentials: true, origin: process.env.CORS_ORIGIN })
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document);
@@ -17,6 +17,6 @@ async function bootstrap() {
   app.useGlobalFilters(new QueryFailedErrorFilter());
   app.useGlobalFilters(new EntityNotFoundErrorFilter());
 
-  await app.listen(3000);
+  await app.listen(process.env.PORT);
 }
 bootstrap();
