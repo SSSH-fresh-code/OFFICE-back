@@ -24,7 +24,7 @@ export class CreateUserDto extends PickType(UserEntity, [
   })
   userPw: string;
 
-  @Length(4, 30, { message: legnthValidationMessage })
+  @Length(2, 10, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
   @ApiProperty({
     example: "testName"
