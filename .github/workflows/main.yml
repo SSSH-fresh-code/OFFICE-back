@@ -8,18 +8,7 @@ jobs:
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v3
-
-      - name: Nodejs 18.x 사용
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18.x
-
-      - run: echo "${{ secrets.ENV }}" | base64 --decode > ./.env
-      - run: echo "${{ secrets.NPMRC }}" | base64 --decode > ./.npmrc
-      - run: npm install
-      - run: npm run build
-      - run: echo "${{ secrets.AWSPEM }}" | base64 --decode > ./dist/global-bundle.pem
-
+        
       - name: 도커 이미지 빌드
         run: docker build -t daeseong0226/office-nest .
 
