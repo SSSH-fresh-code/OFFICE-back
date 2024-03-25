@@ -1,15 +1,9 @@
-FROM nginx:1.25.4-alpine-slim
+FROM node:18-alpine
 
 WORKDIR /app
 
-RUN ["apk", "add","--update", "nodejs", "npm"]
-
 COPY . .
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-RUN ["nginx"]
+EXPOSE 3000
 
 CMD ["npm","run","start:prod"]
-
-EXPOSE 80
