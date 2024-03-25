@@ -8,6 +8,8 @@ COPY . .
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+RUN ["nginx"]
+
 CMD ["npm","run","start:prod"]
 
 EXPOSE 80
