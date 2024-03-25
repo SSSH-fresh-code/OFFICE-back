@@ -1,16 +1,10 @@
 .devcontainer
 .vscode
 .coverage
+node_modules
 documents
 postgres-data
-src
-test
 .env.local
 .env.sample
 .gitignore
-.eslintrc.js
-.prettierrc
-.npmrc
-nest-cli.json
 README.md
-tsconfig*
