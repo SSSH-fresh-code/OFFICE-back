@@ -29,7 +29,7 @@ import { readFileSync } from 'fs';
       synchronize: true,
       ssl: {
         // 다운로드한 인증서 파일 경로 추가
-        ca: readFileSync('global-bundle.pem')
+        ca: readFileSync('./dist/global-bundle.pem')
       },
       extra: {
         // SSL 연결을 강제 설정
