@@ -10,6 +10,7 @@ import { UserEntity } from './users/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
+import { readFileSync } from 'fs';
 
 @Module({
   imports: [
@@ -26,6 +27,14 @@ import { TokenGuard } from './common/guard/token.guard';
       database: process.env.DB_DATABASE,
       entities: [UserEntity],
       synchronize: true,
+      ssl: {
+        // 다운로드한 인증서 파일 경로 추가
+        ca: readFileSync('./global-bundle.pem')
+      },
+      extra: {
+        // SSL 연결을 강제 설정
+        ssl: { rejectUnauthorized: false },
+      },
     }),
     UsersModule,
     CommonModule,
