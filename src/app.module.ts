@@ -11,6 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
 import { readFileSync } from 'fs';
+import getTypeOrmConfig from './config/typeorm.config';
 
 @Module({
   imports: [
@@ -18,24 +19,7 @@ import { readFileSync } from 'fs';
       isGlobal: true,
       envFilePath: ['.env.local', '.env.development', '.env'],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: process.env.DB_USER_NAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [UserEntity],
-      synchronize: true,
-      ssl: {
-        // 다운로드한 인증서 파일 경로 추가
-        ca: readFileSync('./dist/global-bundle.pem')
-      },
-      extra: {
-        // SSL 연결을 강제 설정
-        ssl: { rejectUnauthorized: false },
-      },
-    }),
+    TypeOrmModule.forRoot(getTypeOrmConfig()),
     UsersModule,
     CommonModule,
     AuthsModule,
