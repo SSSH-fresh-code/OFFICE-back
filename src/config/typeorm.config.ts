@@ -11,7 +11,8 @@ export default function getTypeOrmConfig(): TypeOrmModuleOptions {
     },
     extra: {
       ssl: { rejectUnauthorized: false }
-    }
+    },
+    synchronize: false
   } : {}
 
   const option: TypeOrmModuleOptions = {
@@ -25,7 +26,6 @@ export default function getTypeOrmConfig(): TypeOrmModuleOptions {
     synchronize: true,
     ...isProductionOption
   }
-
 
   return option;
 }
