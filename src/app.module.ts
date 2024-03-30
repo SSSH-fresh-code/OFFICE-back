@@ -9,7 +9,7 @@ import { AuthsModule } from './auths/auths.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
-import getTypeOrmConfig from './config/typeorm.config';
+import { DatabaseModule } from './config/database/database.module';
 
 @Module({
   imports: [
@@ -17,7 +17,6 @@ import getTypeOrmConfig from './config/typeorm.config';
       isGlobal: true,
       envFilePath: ['.env.local', '.env.development', '.env'],
     }),
-    TypeOrmModule.forRoot(getTypeOrmConfig()),
     UsersModule,
     CommonModule,
     AuthsModule,

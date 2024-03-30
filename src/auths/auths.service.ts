@@ -135,6 +135,8 @@ export class AuthsService {
         return role === "ADMIN";
       case "USER":
         return role === "ADMIN" || role === "MANAGER";
+      case "GUEST":
+        return true;
     }
 
     return false;

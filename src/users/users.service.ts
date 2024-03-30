@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
@@ -15,7 +15,7 @@ import { CertUserDto } from './dto/cert-user.dto';
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(UserEntity)
+    @Inject('USER_REPOSITORY')
     private readonly usersRepository: Repository<UserEntity>,
     private readonly commonService: CommonService,
     private readonly authsService: AuthsService
@@ -55,7 +55,7 @@ export class UsersService {
 
     const user = await this.usersRepository.save(createUser);
 
-    return true;
+    return user;
   }
 
   /**
@@ -159,11 +159,13 @@ export class UsersService {
    * @returns 
    */
   async deleteUser(user: TTokenPayload, id: string) {
-    const u = await this.usersRepository.findOneOrFail({
+    const u = await this.usersRepository.findOne({
       where: { id }
     });
 
-    if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+    if (!u) {
+      throw new BadRequestException("존재하지 않는 유저입니다.");
+    } if (!this.authsService.checkRole(u.userRole, user.userRole)) {
       throw new ForbiddenException("삭제 권한이 없습니다.");
     }
 

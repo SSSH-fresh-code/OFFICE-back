@@ -63,7 +63,6 @@ export class UsersController {
     }
 
     response.cookie('accessToken', accessToken, options)
-    response.cookie('gpgp', 'dd', options)
     return true;
   }
 
