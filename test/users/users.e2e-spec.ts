@@ -60,7 +60,7 @@ describe('UsersController (e2e)', () => {
       expect(response.body.info.total).toBeGreaterThanOrEqual(3);
 
       if (response.body.info.total >= 3) {
-        response.body.data.array.forEach(element => {
+        response.body.data.forEach(element => {
           if (element.userId === "testAdmin") testIds.admin = element.id
           else if (element.userId === "testManager") testIds.manager = element.id
         });
@@ -94,6 +94,10 @@ describe('UsersController (e2e)', () => {
     });
   })
 
+  /** 
+   * TODO : 이쪽 케이스로 통합해볼까?
+   * 정상인 케이스는 beforeAll에서 수행
+   */
   describe('/users/login (POST)', () => {
     it('[에러케이스] USER 계정으로 로그인', async () => {
       const response = await request(app.getHttpServer())
@@ -105,6 +109,7 @@ describe('UsersController (e2e)', () => {
     })
   });
 
+  // TODO : refresh의 throw 케이스 더 찾아서 추가하기
   describe('/users/refresh (POST)', () => {
     it('ADMIN 토큰 재발급', async () => {
       const response = await request(app.getHttpServer())
@@ -157,13 +162,13 @@ describe('UsersController (e2e)', () => {
       expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
     });
 
-    it('승인 대기 유저 승인 처리', async () => {
+    it('Admin Token 으로 승인 대기 유저 승인 처리', async () => {
       const response = await request(app.getHttpServer())
         .post('/users/cert')
-        .send({ ...testUserDto, userId: "testId2" });
+        .set('Cookie', testAccessToken.admin)
+        .send({ idList: [testIds.user] });
 
-      expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
+      expect(response.statusCode).toBe(201);
     })
 
     it('생성한 유저 삭제', async () => {
@@ -184,8 +189,13 @@ describe('UsersController (e2e)', () => {
     });
 
     it('[에러케이스] 매니저 계정으로 관리자 계정 삭제 시도', async () => {
+      const response = await request(app.getHttpServer())
+        .delete(`/users/${testIds.admin}`)
+        .set('Cookie', testAccessToken.manager);
 
-    })
+      expect(response.statusCode).toBe(403);
+      expect(response.body.message).toBe("잘못된 접근입니다.");
+    });
   });
 
 
