@@ -6,12 +6,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { AuthsModule } from './auths/auths.module';
-import { UserEntity } from './users/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
-import { readFileSync } from 'fs';
-import getTypeOrmConfig from './config/typeorm.config';
+import { DatabaseModule } from './config/database/database.module';
 
 @Module({
   imports: [
@@ -19,7 +17,6 @@ import getTypeOrmConfig from './config/typeorm.config';
       isGlobal: true,
       envFilePath: ['.env.local', '.env.development', '.env'],
     }),
-    TypeOrmModule.forRoot(getTypeOrmConfig()),
     UsersModule,
     CommonModule,
     AuthsModule,

@@ -1,21 +1,19 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { AuthsService } from '../auths/auths.service';
 import { compare } from 'bcrypt';
-import { TokenPrefixType, TokenType } from '../auths/const/token.const';
+import { TokenType } from '../auths/const/token.const';
 import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CertUserDto } from './dto/cert-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(UserEntity)
+    @Inject('USER_REPOSITORY')
     private readonly usersRepository: Repository<UserEntity>,
     private readonly commonService: CommonService,
     private readonly authsService: AuthsService
@@ -55,7 +53,7 @@ export class UsersService {
 
     const user = await this.usersRepository.save(createUser);
 
-    return true;
+    return user;
   }
 
   /**
@@ -93,9 +91,19 @@ export class UsersService {
    * @returns 
    */
   async findUser(user: TTokenPayload, id: string) {
-    const u = await this.usersRepository.findOneOrFail({
-      where: { id }
-    });
+    let u;
+
+    try {
+      u = await this.usersRepository.findOne({
+        where: { id }
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.indexOf("invalid input syntax for type uuid") !== -1) {
+        throw new BadRequestException("올바르지 않은 UUID 값 입니다.");
+      }
+    }
+
+    if (!u) throw new NotFoundException("존재하지 않는 유저입니다.");
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
@@ -124,7 +132,6 @@ export class UsersService {
     const u = await this.usersRepository.findOneOrFail({
       where: { id: dto.id }
     });
-
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
@@ -159,11 +166,13 @@ export class UsersService {
    * @returns 
    */
   async deleteUser(user: TTokenPayload, id: string) {
-    const u = await this.usersRepository.findOneOrFail({
+    const u = await this.usersRepository.findOne({
       where: { id }
     });
 
-    if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+    if (!u) {
+      throw new BadRequestException("존재하지 않는 유저입니다.");
+    } if (!this.authsService.checkRole(u.userRole, user.userRole)) {
       throw new ForbiddenException("삭제 권한이 없습니다.");
     }
 
@@ -173,9 +182,21 @@ export class UsersService {
   }
 
   async certUser(idList: string[]) {
-    if (!idList) throw new BadRequestException("체크 된 값이 없습니다.");
+    if (idList.length === 0 || !idList) throw new BadRequestException("체크 된 값이 없습니다.");
 
-    const u = await this.usersRepository.update(idList, {
+    const ids = await this.usersRepository.find({
+      where: {
+        id: Or(...idList.map(i => Equal(i))),
+        isCertified: false,
+        userRole: "GUEST"
+      }
+      , select: ["id"]
+    });
+
+    if (ids.length === 0)
+      throw new BadRequestException("이미 처리된 유저(들)입니다.");
+
+    const u = await this.usersRepository.update(ids.map((i) => i.id), {
       isCertified: true,
       userRole: "USER"
     });
