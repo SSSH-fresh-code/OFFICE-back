@@ -83,14 +83,14 @@ export class UsersController {
   @Roles('GUEST')
   @ApiQuery({ name: "userId", required: false, type: "string" })
   @ApiQuery({ name: "userName", required: false, type: "string" })
-  existsUserByUserId(@Query('userId') userId: string, @Query('userName') userName: string) {
+  async existsUserByUserId(@Query('userId') userId: string, @Query('userName') userName: string) {
     const where: FindOptionsWhere<UserEntity> = {};
 
     if (userId) where.userId = userId;
     else if (userName) where.userName = userName;
     else throw new BadRequestException("파라미터가 존재하지 않습니다.");
 
-    return this.usersService.existsUser(where);
+    return { isExists: await this.usersService.existsUser(where) };
   }
 
   @Get()
