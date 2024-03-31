@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConsoleLogger, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
@@ -111,6 +111,7 @@ export class AuthsService {
     } catch (e) {
       if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
         throw new BadRequestException(e.message);
+      console.log(e);
       throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
     }
   }

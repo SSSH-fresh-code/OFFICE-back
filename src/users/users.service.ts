@@ -177,7 +177,7 @@ export class UsersService {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
-    await this.usersRepository.delete(u.id);
+    await this.usersRepository.softDelete(u.id);
 
     return true;
   }

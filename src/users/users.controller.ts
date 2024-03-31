@@ -13,7 +13,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { User } from 'src/common/decorator/user.decorator';
 import { TBasicToken, TTokenPayload } from 'types-sssh';
@@ -75,7 +75,7 @@ export class UsersController {
 
   @Post("cert")
   @Roles('MANAGER')
-  @ApiBearerAuth('access')
+  @ApiCookieAuth('access')
   certUser(@Body('idList') idList: string[]) {
     return this.usersService.certUser(idList);
   }
@@ -96,28 +96,28 @@ export class UsersController {
 
   @Get()
   @Roles('MANAGER')
-  @ApiBearerAuth('access')
+  @ApiCookieAuth('access')
   async findUsers(@Query() query: UserPaginationDto) {
     return await this.usersService.findUsers(query);
   }
 
   @Get(":id")
   @Roles('USER')
-  @ApiBearerAuth('access')
+  @ApiCookieAuth('access')
   async findUser(@User() user: TTokenPayload, @Param('id') id: string) {
     return await this.usersService.findUser(user, id);
   }
 
   @Patch()
   @Roles('USER')
-  @ApiBearerAuth('access')
+  @ApiCookieAuth('access')
   async updateUser(@User() user: TTokenPayload, @Body() dto: UpdateUserDto) {
     return await this.usersService.updateUser(user, dto);
   }
 
   @Delete(":id")
   @Roles('ADMIN')
-  @ApiBearerAuth('access')
+  @ApiCookieAuth('access')
   async deleteUser(@User() user: TTokenPayload, @Param('id') id: string) {
     return await this.usersService.deleteUser(user, id);
   }

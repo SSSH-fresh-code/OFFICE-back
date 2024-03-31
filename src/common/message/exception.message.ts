@@ -1,5 +1,6 @@
 export enum ExceptionMessages {
   ALREADY_PRECESSED = "이미 처리된 상태입니다.",
+  ALREADY_WORK = "이미 퇴근한 상태입니다. \n재 출근시 출근 기록을 삭제해주세요.",
   EXPIRED_TOKEN = "만료된 토큰입니다.",
   EXIST_ID = "이미 존재하는 ID입니다.",
   EXIST_NAME = "이미 존재하는 닉네임입니다.",
@@ -13,6 +14,7 @@ export enum ExceptionMessages {
   NOT_EXIST_ID = "존재하지 않는 아이디입니다.",
   NOT_EXIST_USER = "존재하지 않는 유저입니다.",
   NOT_EXIST_USER_PROPERTY_IN_REQUEST = "Request에 user 프로퍼티가 존재하지 않습니다.",
+  NOT_EXIST_WORK = "출근 기록이 없습니다. 출근 후 퇴근해주세요.",
   WRONG_ACCOUNT_INFO = "잘못된 계정 정보입니다.",
 
   INTERNAL_SERVER_ERROR = "관리자에게 문의해주세요."

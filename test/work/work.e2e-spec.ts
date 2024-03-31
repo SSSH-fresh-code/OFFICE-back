@@ -75,7 +75,7 @@ describe('UsersController (e2e)', () => {
 
   afterAll((done) => {
     workRepository
-      .query(`delete from users where "userId" in ('testAdmin','testManager','testUser')`)
+      .query(`delete from work; delete from users where "userId" in ('testAdmin','testManager','testUser'); `)
       .then(() => {
         app.close()
       })
