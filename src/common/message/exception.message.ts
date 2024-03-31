@@ -14,4 +14,6 @@ export enum ExceptionMessages {
   NOT_EXIST_USER = "존재하지 않는 유저입니다.",
   NOT_EXIST_USER_PROPERTY_IN_REQUEST = "Request에 user 프로퍼티가 존재하지 않습니다.",
   WRONG_ACCOUNT_INFO = "잘못된 계정 정보입니다.",
+
+  INTERNAL_SERVER_ERROR = "관리자에게 문의해주세요."
 }

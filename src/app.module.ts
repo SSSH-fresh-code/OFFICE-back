@@ -2,14 +2,13 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { AuthsModule } from './auths/auths.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
-import { DatabaseModule } from './config/database/database.module';
+import { WorkModule } from './work/work.module';
 
 @Module({
   imports: [
@@ -20,6 +19,7 @@ import { DatabaseModule } from './config/database/database.module';
     UsersModule,
     CommonModule,
     AuthsModule,
+    WorkModule,
   ],
   controllers: [AppController],
   providers: [AppService,
