@@ -1,11 +1,9 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotAcceptableException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, InternalServerErrorException, NotAcceptableException } from '@nestjs/common';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { DataSource, Equal, IsNull, Not, Or, QueryFailedError, QueryRunner, Repository } from 'typeorm';
 import { WorkEntity } from './entities/work.entity';
 import { TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { endWith } from 'rxjs';
 import { AuthsService } from 'src/auths/auths.service';
 
 @Injectable()
@@ -92,8 +90,6 @@ export class WorkService {
       baseDate: Or(...baseDates.map(d => Equal(d)))
     });
 
-    console.log(deleteWorks);
-
     return deleteWorks;
   }
 
@@ -126,7 +122,8 @@ export class WorkService {
   private getDateStr(date?: Date) {
     const d = date ? date : new Date();
     const month = d.getMonth() < 9 ? `0${d.getMonth() + 1}` : d.getMonth() + 1;
+    const day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
 
-    return `${d.getFullYear()}-${month}-${d.getDate()}`;
+    return `${d.getFullYear()}-${month}-${day}`;
   }
 }

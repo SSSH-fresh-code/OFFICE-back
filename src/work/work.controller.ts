@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, ParseArrayPipe, Patch, Post, Query } from '@nestjs/common';
 import { WorkService } from './work.service';
 import { Roles } from 'src/common/decorator/roles.decorator';
-import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 import { User } from 'src/common/decorator/user.decorator';
 import { TTokenPayload } from 'types-sssh';
 
@@ -15,7 +15,6 @@ export class WorkController {
   async goToWork(@User() user: TTokenPayload) {
     return await this.workService.goToWork(user);
   }
-
 
   @ApiBody({
     schema: {
@@ -38,7 +37,7 @@ export class WorkController {
     type: "string",
     isArray: true
   })
-  @Delete()
+  @Delete('')
   async deleteWorks(@User() user: TTokenPayload, @Query("id") id: string, @Query('baseDates', ParseArrayPipe) baseDates: string[]) {
     return await this.workService.deleteWorks(user, id, baseDates);
   }
