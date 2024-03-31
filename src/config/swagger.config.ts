@@ -18,12 +18,14 @@ export const swaggerConfig = new DocumentBuilder()
     },
     'refresh',
   )
-  .addBearerAuth(
+  .addCookieAuth(
+    "accessToken",
     {
-      type: 'http',
-      name: 'access',
+      name: "accessToken",
+      type: "apiKey",
+      in: "cookie"
     },
-    'access',
+    "access"
   )
   .addTag('users')
   .build();
