@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Equal, FindManyOptions, FindOptionsWhere, Or, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthsService } from '../auths/auths.service';
@@ -177,7 +177,19 @@ export class UsersService {
   async certUser(idList: string[]) {
     if (!idList) throw new BadRequestException("체크 된 값이 없습니다.");
 
-    const u = await this.usersRepository.update(idList, {
+    const ids = await this.usersRepository.find({
+      where: {
+        id: Or(...idList.map(i => Equal(i))),
+        isCertified: false,
+        userRole: "GUEST"
+      }
+      , select: ["id"]
+    });
+
+    if (ids.length === 0)
+      throw new BadRequestException("이미 처리된 유저(들)입니다.");
+
+    const u = await this.usersRepository.update(ids.map((i) => i.id), {
       isCertified: true,
       userRole: "USER"
     });
