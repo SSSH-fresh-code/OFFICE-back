@@ -175,7 +175,7 @@ export class UsersService {
   }
 
   async certUser(idList: string[]) {
-    if (!idList) throw new BadRequestException("체크 된 값이 없습니다.");
+    if (idList.length === 0 || !idList) throw new BadRequestException("체크 된 값이 없습니다.");
 
     const ids = await this.usersRepository.find({
       where: {
