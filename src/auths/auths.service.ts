@@ -5,6 +5,7 @@ import { TokenPrefixType, TokenType } from "./const/token.const";
 import { compare, genSalt, hash } from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { TTokenPayload, TUserRole } from 'types-sssh';
+import { ExceptionMessages } from 'src/common/message/exception.message';
 
 @Injectable()
 export class AuthsService {
@@ -19,7 +20,6 @@ export class AuthsService {
       const encryptPw = await hash(password, salt);
       return encryptPw;
     } catch (error) {
-      console.error('비밀번호 해싱 중 오류 발생:', error);
       throw error;
     }
   }
@@ -58,7 +58,7 @@ export class AuthsService {
     const splitToken = authorizationInHeader.trim().split(' ');
 
     if (splitToken.length !== 2) {
-      throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
+      throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
     }
 
     let tokenPrefix = TokenPrefixType.BASIC;
@@ -70,7 +70,7 @@ export class AuthsService {
         tokenPrefix = TokenPrefixType.BEARER
         break;
       default:
-        throw new UnauthorizedException('잘못된 유형의 토큰입니다.');
+        throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
     }
 
     return {
@@ -89,7 +89,7 @@ export class AuthsService {
     const splitStr = decoded.split(':');
 
     if (splitStr.length !== 2) {
-      throw new UnauthorizedException('잘못된 유형의 Basic 토큰입니다.');
+      throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
     }
 
     const userId = splitStr[0];
@@ -106,12 +106,12 @@ export class AuthsService {
   verifyToken(token: string, type: TokenType) {
     try {
       const payload = this.jwtService.verify<TTokenPayload>(token);
-      if (type !== payload.type) throw new Error("잘못된 유형의 토큰입니다.");
+      if (type !== payload.type) throw new Error(ExceptionMessages.INVALID_TOKEN);
       return payload
     } catch (e) {
-      if (e instanceof Error && e.message === "잘못된 유형의 토큰입니다.")
+      if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
         throw new BadRequestException(e.message);
-      throw new UnauthorizedException('만료된 토큰입니다.');
+      throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
     }
   }
 

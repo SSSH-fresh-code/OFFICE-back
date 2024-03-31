@@ -4,6 +4,7 @@ import { PaginationDto } from './dto/pagination.dto';
 import { FindManyOptions, FindOptions, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { FILTER_MAPPER } from './const/filter-mapper.const';
 import { PaginationResult } from './dto/pagination-result.dto';
+import { ExceptionMessages } from './message/exception.message';
 
 @Injectable()
 export class CommonService {
@@ -77,7 +78,7 @@ export class CommonService {
 
     if (split.length !== 2 && split.length !== 3) {
       throw new BadRequestException(
-        `where 필터는 '__'로 split 하였을때 길이가 2 또는 3이어야 합니다. - key : ${key}`,
+        ExceptionMessages.INVALID_WHERE_IN_PAGING + key,
       );
     }
     if (split.length == 2) {

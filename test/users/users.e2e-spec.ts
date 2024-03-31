@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { ExceptionMessages } from 'src/common/message/exception.message';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
@@ -81,7 +82,7 @@ describe('UsersController (e2e)', () => {
         .set('authorization', `Basic ${Buffer.from("testUser:testPw").toString('base64')}`);
 
       expect(response.statusCode).toBe(403);
-      expect(response.body.message).toBe("접근 권한이 없는 유저입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     })
   });
 
@@ -163,7 +164,7 @@ describe('UsersController (e2e)', () => {
         .send({ refreshToken: token });
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("잘못된 유형의 토큰입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.INVALID_TOKEN);
     })
   })
 
@@ -187,7 +188,7 @@ describe('UsersController (e2e)', () => {
         .send({ ...testUserDto, userName: "testName2" })
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("이미 존재하는 ID 입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.EXIST_ID);
     })
 
     it('[에러케이스] 이미 존재하는 이름', async () => {
@@ -196,7 +197,7 @@ describe('UsersController (e2e)', () => {
         .send({ ...testUserDto, userId: "testId2" })
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.EXIST_NAME);
     });
 
   });
@@ -215,7 +216,7 @@ describe('UsersController (e2e)', () => {
         .set('authorization', `Basic ${Buffer.from(testUserDto.userId + ":" + testUserDto.userPw).toString('base64')}`);
 
       expect(response2.statusCode).toBe(403);
-      expect(response2.body.message).toBe("접근 권한이 없는 유저입니다.");
+      expect(response2.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
 
     it('[에러케이스] 이미 처리된 유저 처리', async () => {
@@ -225,7 +226,7 @@ describe('UsersController (e2e)', () => {
         .send({ idList: [testIds.user] });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe("이미 처리된 유저(들)입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.ALREADY_PRECESSED);
     });
 
     it('[에러케이스] 처리 값이 없는 경우', async () => {
@@ -235,7 +236,7 @@ describe('UsersController (e2e)', () => {
         .send({ idList: [] });
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe("체크 된 값이 없습니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PARAMETER);
     });
   });
 
@@ -326,7 +327,7 @@ describe('UsersController (e2e)', () => {
         .send(updateUserDto);
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.EXIST_NAME);
     });
 
     it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
@@ -342,7 +343,7 @@ describe('UsersController (e2e)', () => {
         .send(updateUserDto);
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toBe("ADMIN 계정은 수정할 수 없습니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
 
     it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
@@ -358,7 +359,7 @@ describe('UsersController (e2e)', () => {
         .send(updateUserDto);
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toBe("ADMIN 계정은 수정할 수 없습니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
   });
 
@@ -399,7 +400,7 @@ describe('UsersController (e2e)', () => {
         .set('Cookie', testAccessToken.manager)
 
       expect(response.status).toBe(403);
-      expect(response.body.message).toBe("조회 권한이 존재하지 않습니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     })
 
     it('[에러케이스] UUID가 아닌 건으로 조회', async () => {
@@ -408,7 +409,7 @@ describe('UsersController (e2e)', () => {
         .set('Cookie', testAccessToken.manager)
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toBe("올바르지 않은 UUID 값 입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.INVALID_UUID);
     })
 
     it('[에러케이스] 존재하지 않는 유저 조회', async () => {
@@ -417,7 +418,7 @@ describe('UsersController (e2e)', () => {
         .set('Cookie', testAccessToken.manager)
 
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe("존재하지 않는 유저입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NOT_EXIST_USER);
     })
   });
 
@@ -459,7 +460,7 @@ describe('UsersController (e2e)', () => {
         .get(`/users/exists`);
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("파라미터가 존재하지 않습니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PARAMETER);
     })
   });
 
@@ -478,7 +479,7 @@ describe('UsersController (e2e)', () => {
         .set('Cookie', testAccessToken.admin);
 
       expect(response.statusCode).toBe(400);
-      expect(response.body.message).toBe("존재하지 않는 유저입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NOT_EXIST_USER);
     });
 
     it('[에러케이스] 매니저 계정으로 관리자 계정 삭제 시도', async () => {
@@ -487,7 +488,7 @@ describe('UsersController (e2e)', () => {
         .set('Cookie', testAccessToken.manager);
 
       expect(response.statusCode).toBe(403);
-      expect(response.body.message).toBe("잘못된 접근입니다.");
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
 
   });

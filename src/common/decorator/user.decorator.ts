@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   createParamDecorator,
 } from '@nestjs/common';
+import { ExceptionMessages } from '../message/exception.message';
 
 export const User = createParamDecorator(
   (data: any, context: ExecutionContext) => {
@@ -12,7 +13,7 @@ export const User = createParamDecorator(
 
     if (!user) {
       throw new InternalServerErrorException(
-        'Request에 user 프로퍼티가 존재하지 않습니다.',
+        ExceptionMessages.NOT_EXIST_USER_PROPERTY_IN_REQUEST
       );
     }
 

@@ -9,6 +9,7 @@ import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ExceptionMessages } from 'src/common/message/exception.message';
 
 @Injectable()
 export class UsersService {
@@ -99,18 +100,18 @@ export class UsersService {
       });
     } catch (e) {
       if (e instanceof Error && e.message.indexOf("invalid input syntax for type uuid") !== -1) {
-        throw new BadRequestException("올바르지 않은 UUID 값 입니다.");
+        throw new BadRequestException(ExceptionMessages.INVALID_UUID);
       }
     }
 
-    if (!u) throw new NotFoundException("존재하지 않는 유저입니다.");
+    if (!u) throw new NotFoundException(ExceptionMessages.NOT_EXIST_USER);
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
-        throw new ForbiddenException("조회 권한이 존재하지 않습니다.");
+        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     } else if (user.id !== id) {
-      throw new ForbiddenException("조회 권한이 존재하지 않습니다.");
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
     return u;
@@ -135,15 +136,15 @@ export class UsersService {
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
-        throw new ForbiddenException("ADMIN 계정은 수정할 수 없습니다.");
+        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       };
       if (dto.userRole && !this.authsService.checkRole(dto.userRole, user.userRole)) {
-        throw new ForbiddenException("수정 권한이 존재하지 않습니다.");
+        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     } else if (user.id !== u.id) {
-      throw new ForbiddenException("자신의 계정만 수정할 수 있습니다.");
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     } else if (dto.userRole) {
-      throw new ForbiddenException("권한을 수정할 수 없습니다.");
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
     // userName 중복 체크
@@ -171,9 +172,9 @@ export class UsersService {
     });
 
     if (!u) {
-      throw new BadRequestException("존재하지 않는 유저입니다.");
+      throw new BadRequestException(ExceptionMessages.NOT_EXIST_USER);
     } if (!this.authsService.checkRole(u.userRole, user.userRole)) {
-      throw new ForbiddenException("삭제 권한이 없습니다.");
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
     await this.usersRepository.delete(u.id);
@@ -182,7 +183,8 @@ export class UsersService {
   }
 
   async certUser(idList: string[]) {
-    if (idList.length === 0 || !idList) throw new BadRequestException("체크 된 값이 없습니다.");
+    if (idList.length === 0 || !idList)
+      throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
 
     const ids = await this.usersRepository.find({
       where: {
@@ -194,7 +196,7 @@ export class UsersService {
     });
 
     if (ids.length === 0)
-      throw new BadRequestException("이미 처리된 유저(들)입니다.");
+      throw new BadRequestException(ExceptionMessages.ALREADY_PRECESSED);
 
     const u = await this.usersRepository.update(ids.map((i) => i.id), {
       isCertified: true,
@@ -220,9 +222,12 @@ export class UsersService {
   private async validationInLogin(userId: string) {
     const user = await this.usersRepository.findOne({ select: ["id", "userRole", "userPw", "isCertified"], where: { userId } });
 
-    if (!user) throw new UnauthorizedException("존재하지 않는 아이디 입니다.");
-    else if (!user.isCertified) throw new ForbiddenException("승인되지 않은 유저입니다.\n관리자에게 문의해주세요.")
-    else if (!this.authsService.checkRole("MANAGER", user.userRole)) throw new ForbiddenException("접근 권한이 없는 유저입니다.")
+    if (!user)
+      throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ID);
+    else if (!user.isCertified)
+      throw new ForbiddenException(ExceptionMessages.NOT_APPROVED);
+    else if (!this.authsService.checkRole("MANAGER", user.userRole))
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
 
     return user;
   }
@@ -235,7 +240,7 @@ export class UsersService {
    */
   private async comparePw(pw: string, encryptPw: string): Promise<void> {
     if (!await compare(pw, encryptPw))
-      throw new UnauthorizedException("잘못된 아이디, 비밀번호 입니다.");
+      throw new UnauthorizedException(ExceptionMessages.WRONG_ACCOUNT_INFO);
   }
 
 
@@ -248,9 +253,9 @@ export class UsersService {
    */
   private async duplicateCheck(userId?: string, userName?: string): Promise<void> {
     if (userId && await this.existsUser({ userId: userId })) {
-      throw new BadRequestException("이미 존재하는 ID 입니다.");
+      throw new BadRequestException(ExceptionMessages.EXIST_ID);
     } else if (userName && await this.existsUser({ userName: userName })) {
-      throw new BadRequestException("이미 존재하는 닉네임 입니다.");
+      throw new BadRequestException(ExceptionMessages.EXIST_NAME);
     }
   }
 
