@@ -5,6 +5,7 @@ import { AppModule } from 'src/app.module';
 import { Repository } from 'typeorm';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
@@ -15,12 +16,14 @@ describe('UsersController (e2e)', () => {
   let testIds: TestRoles = { admin: "", manager: "", user: "" };
   let testAccessToken: TestRoles = { admin: "", manager: "", user: "" };
   let testRefreshToken: TestRoles = { admin: "", manager: "", user: "" };
+  let testUserId = "";
 
   const testUserDto: CreateUserDto = {
     userId: "testId",
     userPw: "testPw12",
     userName: "testName"
   }
+
 
   beforeAll((done) => {
     Test.createTestingModule({
@@ -34,19 +37,52 @@ describe('UsersController (e2e)', () => {
         usersRepository = moduleFixture.get("USER_REPOSITORY");
         await usersRepository.query(`
           INSERT INTO users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin', 'ADMIN', true);
-          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testManger', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager', 'MANAGER', true);
+          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager', 'MANAGER', true);
           insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser', 'USER', true);
         `)
-
-        const adminToken = await request(app.getHttpServer()).post('/users/login').set('authorization', `Basic ${Buffer.from("testAdmin:testPw").toString('base64')}`);
-        const managerToken = await request(app.getHttpServer()).post('/users/login').set('authorization', `Basic ${Buffer.from("testManger:testPw").toString('base64')}`);
-
-        testAccessToken.admin = adminToken.header["set-cookie"][0];
-        testRefreshToken.admin = adminToken.body.refreshToken;
-        testAccessToken.manager = managerToken.header["set-cookie"][0];
-        testRefreshToken.manager = managerToken.body.refreshToken;
       })
       .finally(() => { done() });
+  });
+
+  describe('/users/login (POST)', () => {
+    it('Admin 로그인', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from("testAdmin:testPw").toString('base64')}`);
+
+      expect(response.status).toBe(201);
+      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
+      expect(response.body.refreshToken).toBeDefined();
+
+      if (response.headers["set-cookie"][0] && response.body.refreshToken) {
+        testAccessToken.admin = response.header["set-cookie"][0];
+        testRefreshToken.admin = response.body.refreshToken;
+      }
+    });
+
+    it('Manager 로그인', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from("testManager:testPw").toString('base64')}`);
+
+      expect(response.status).toBe(201);
+      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
+      expect(response.body.refreshToken).toBeDefined();
+
+      if (response.headers["set-cookie"][0] && response.body.refreshToken) {
+        testAccessToken.manager = response.header["set-cookie"][0];
+        testRefreshToken.manager = response.body.refreshToken;
+      }
+    })
+
+    it('[에러케이스] USER 계정으로 로그인', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from("testUser:testPw").toString('base64')}`);
+
+      expect(response.statusCode).toBe(403);
+      expect(response.body.message).toBe("접근 권한이 없는 유저입니다.");
+    })
   });
 
   describe('/users (GET)', () => {
@@ -63,6 +99,7 @@ describe('UsersController (e2e)', () => {
         response.body.data.forEach(element => {
           if (element.userId === "testAdmin") testIds.admin = element.id
           else if (element.userId === "testManager") testIds.manager = element.id
+          else if (element.userId === "testUser") testUserId = element.id
         });
       }
     });
@@ -94,22 +131,6 @@ describe('UsersController (e2e)', () => {
     });
   })
 
-  /** 
-   * TODO : 이쪽 케이스로 통합해볼까?
-   * 정상인 케이스는 beforeAll에서 수행
-   */
-  describe('/users/login (POST)', () => {
-    it('[에러케이스] USER 계정으로 로그인', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/login')
-        .set('authorization', `Basic ${Buffer.from("testUser:testPw").toString('base64')}`);
-
-      expect(response.statusCode).toBe(403);
-      expect(response.body.message).toBe("접근 권한이 없는 유저입니다.");
-    })
-  });
-
-  // TODO : refresh의 throw 케이스 더 찾아서 추가하기
   describe('/users/refresh (POST)', () => {
     it('ADMIN 토큰 재발급', async () => {
       const response = await request(app.getHttpServer())
@@ -128,9 +149,25 @@ describe('UsersController (e2e)', () => {
       expect(response.statusCode).toBe(201);
       expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy()
     })
+
+    it('[에커레이스] AccessToken으로 재발급 시도', async () => {
+      // Cookie 에서 token 추출
+      const access = testAccessToken.manager;
+      const token = access.substring(
+        access.indexOf("=", access.indexOf("accessToken")) + 1
+        , access.indexOf(";", access.indexOf("accessToken"))
+      );
+
+      const response = await request(app.getHttpServer())
+        .post('/users/refresh')
+        .send({ refreshToken: token });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.body.message).toBe("잘못된 유형의 토큰입니다.");
+    })
   })
 
-  describe('/users (POST), /users/cert (POST), /users (DELETE)', () => {
+  describe('/users (POST)', () => {
     it('회원가입', async () => {
       const response = await request(app.getHttpServer())
         .post('/users')
@@ -162,15 +199,271 @@ describe('UsersController (e2e)', () => {
       expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
     });
 
-    it('Admin Token 으로 승인 대기 유저 승인 처리', async () => {
+  });
+
+  describe('/users/cert (POST)', () => {
+    it('승인 대기 유저 승인 처리후 로그인', async () => {
       const response = await request(app.getHttpServer())
         .post('/users/cert')
         .set('Cookie', testAccessToken.admin)
         .send({ idList: [testIds.user] });
 
       expect(response.statusCode).toBe(201);
+
+      const response2 = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from(testUserDto.userId + ":" + testUserDto.userPw).toString('base64')}`);
+
+      expect(response2.statusCode).toBe(403);
+      expect(response2.body.message).toBe("접근 권한이 없는 유저입니다.");
+    });
+
+    it('[에러케이스] 이미 처리된 유저 처리', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/cert')
+        .set('Cookie', testAccessToken.manager)
+        .send({ idList: [testIds.user] });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("이미 처리된 유저(들)입니다.");
+    });
+
+    it('[에러케이스] 처리 값이 없는 경우', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/users/cert')
+        .set('Cookie', testAccessToken.manager)
+        .send({ idList: [] });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("체크 된 값이 없습니다.");
+    });
+  });
+
+
+  describe('/users (PATCH)', () => {
+    it('관리자 token으로 userName 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.user,
+        userName: "수정",
+        userRole: "USER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.admin)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(200);
+      expect(response.body.userName).toBe(updateUserDto.userName);
     })
 
+    it('Manager token으로 userRole 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.user,
+        userName: "수정",
+        userRole: "MANAGER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.manager)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(200);
+      expect(response.body.userRole).toBe(updateUserDto.userRole);
+    })
+
+    it('Admin token으로 Manager 계정 userName, userUser 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.user,
+        userName: "유저",
+        userRole: "USER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.admin)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(200);
+      expect(response.body.userRole).toBe(updateUserDto.userRole);
+      expect(response.body.userName).toBe(updateUserDto.userName);
+    })
+
+    it('Admin token으로 Admin 계정 비밀번호 초기화', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.admin,
+        userName: "testAdmin",
+        userRole: "ADMIN",
+        isPwReset: true
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.admin)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(200);
+
+      const response2 = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from("testAdmin:a12345678").toString('base64')}`);
+
+      expect(response2.status).toBe(201);
+      expect(response2.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
+      expect(response2.body.refreshToken).toBeDefined();
+    });
+
+    it('[에러케이스] 이미 존재하는 유저 이름으로 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.user,
+        userName: "testAdmin",
+        userRole: "USER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.admin)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("이미 존재하는 닉네임 입니다.");
+    });
+
+    it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.admin,
+        userName: "수정안됨",
+        userRole: "MANAGER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.manager)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("ADMIN 계정은 수정할 수 없습니다.");
+    });
+
+    it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
+      const updateUserDto: UpdateUserDto = {
+        id: testIds.admin,
+        userName: "수정안됨",
+        userRole: "MANAGER",
+        isPwReset: false
+      }
+      const response = await request(app.getHttpServer())
+        .patch('/users')
+        .set('Cookie', testAccessToken.manager)
+        .send(updateUserDto);
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("ADMIN 계정은 수정할 수 없습니다.");
+    });
+  });
+
+  describe('/users/${id} (GET)', () => {
+    it('Admin 토큰으로 Admin 유저 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${testIds.admin}`)
+        .set('Cookie', testAccessToken.admin)
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
+      expect(response.body.id).toBe(testIds.admin);
+    })
+
+    it('Admin 토큰으로 Manager 유저 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${testIds.manager}`)
+        .set('Cookie', testAccessToken.admin)
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
+      expect(response.body.id).toBe(testIds.manager);
+    })
+
+    it('Manager 토큰으로 유저 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${testIds.user}`)
+        .set('Cookie', testAccessToken.manager)
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
+      expect(response.body.id).toBe(testIds.user);
+    })
+
+    it('[에러케이스] Manager 토큰으로 Admin 유저 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${testIds.admin}`)
+        .set('Cookie', testAccessToken.manager)
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe("조회 권한이 존재하지 않습니다.");
+    })
+
+    it('[에러케이스] UUID가 아닌 건으로 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/0107a`)
+        .set('Cookie', testAccessToken.manager)
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("올바르지 않은 UUID 값 입니다.");
+    })
+
+    it('[에러케이스] 존재하지 않는 유저 조회', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/0107a9ec-5ac9-43a1-91d2-a4821491c542`)
+        .set('Cookie', testAccessToken.manager)
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe("존재하지 않는 유저입니다.");
+    })
+  });
+
+  describe('/users/exists (GET)', () => {
+    it('존재하는 name 검사', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/exists?userName=testAdmin`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.isExists).toBeTruthy();
+    })
+
+    it('존재하지 않은 name 검사', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/exists?userName=z`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.isExists).toBeFalsy();
+    })
+
+    it('존재하는 id 검사', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/exists?userId=testAdmin`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.isExists).toBeTruthy();
+    })
+
+    it('존재하지 않은 name 검사', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/exists?userId=z`);
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.isExists).toBeFalsy();
+    })
+
+    it('[에러케이스] 파라미터를 안넘기는 경우', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/exists`);
+
+      expect(response.statusCode).toBe(400);
+      expect(response.body.message).toBe("파라미터가 존재하지 않습니다.");
+    })
+  });
+
+  describe('/users (DELETE)', () => {
     it('생성한 유저 삭제', async () => {
       const response = await request(app.getHttpServer())
         .delete(`/users/${testIds.user}`)
@@ -196,14 +489,13 @@ describe('UsersController (e2e)', () => {
       expect(response.statusCode).toBe(403);
       expect(response.body.message).toBe("잘못된 접근입니다.");
     });
+
   });
-
-
 
 
   afterAll((done) => {
     usersRepository
-      .query(`delete from users where "userId" in ('testAdmin','testManger','testUser')`)
+      .query(`delete from users where "userId" in ('testAdmin','testManager','testUser')`)
       .then(() => {
         app.close()
       })

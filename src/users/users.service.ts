@@ -1,16 +1,14 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Equal, FindManyOptions, FindOptionsWhere, Or, Repository } from 'typeorm';
+import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { AuthsService } from '../auths/auths.service';
 import { compare } from 'bcrypt';
-import { TokenPrefixType, TokenType } from '../auths/const/token.const';
+import { TokenType } from '../auths/const/token.const';
 import { TBasicToken, TTokenPayload } from 'types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CertUserDto } from './dto/cert-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -93,9 +91,19 @@ export class UsersService {
    * @returns 
    */
   async findUser(user: TTokenPayload, id: string) {
-    const u = await this.usersRepository.findOneOrFail({
-      where: { id }
-    });
+    let u;
+
+    try {
+      u = await this.usersRepository.findOne({
+        where: { id }
+      });
+    } catch (e) {
+      if (e instanceof Error && e.message.indexOf("invalid input syntax for type uuid") !== -1) {
+        throw new BadRequestException("올바르지 않은 UUID 값 입니다.");
+      }
+    }
+
+    if (!u) throw new NotFoundException("존재하지 않는 유저입니다.");
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
@@ -124,7 +132,6 @@ export class UsersService {
     const u = await this.usersRepository.findOneOrFail({
       where: { id: dto.id }
     });
-
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
       if (!this.authsService.checkRole(u.userRole, user.userRole)) {
