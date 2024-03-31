@@ -21,6 +21,7 @@ import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CookieOptions, Response } from 'express';
+import { ExceptionMessages } from 'src/common/message/exception.message';
 
 @ApiTags('users')
 @Controller('users')
@@ -88,7 +89,7 @@ export class UsersController {
 
     if (userId) where.userId = userId;
     else if (userName) where.userName = userName;
-    else throw new BadRequestException("파라미터가 존재하지 않습니다.");
+    else throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
 
     return { isExists: await this.usersService.existsUser(where) };
   }

@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorator/roles.decorator';
 import { TUserRole } from 'types-sssh';
 import { AuthsService } from 'src/auths/auths.service';
+import { ExceptionMessages } from '../message/exception.message';
 
 /**
  * 권한 검사를 위한 Guard
@@ -40,10 +41,10 @@ export class RolesGuard implements CanActivate {
     if (requireRole !== "GUEST") {
       const { user } = context.switchToHttp().getRequest();
 
-      if (!user) throw new UnauthorizedException('사용자 정보가 존재하지 않습니다.');
+      if (!user) throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ACCOUNT_INFO);
 
       if (!this.authsService.checkRole(requireRole, user.userRole)) {
-        throw new ForbiddenException('잘못된 접근입니다.');
+        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     }
 
