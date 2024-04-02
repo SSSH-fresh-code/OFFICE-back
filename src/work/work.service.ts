@@ -1,10 +1,11 @@
-import { ForbiddenException, Inject, Injectable, InternalServerErrorException, NotAcceptableException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException, NotAcceptableException } from '@nestjs/common';
 import { UserEntity } from 'src/users/entities/user.entity';
-import { DataSource, Equal, IsNull, Not, Or, QueryFailedError, QueryRunner, Repository } from 'typeorm';
+import { Between, DataSource, Equal, IsNull, Not, Or, QueryFailedError, QueryRunner, Repository } from 'typeorm';
 import { WorkEntity } from './entities/work.entity';
-import { TTokenPayload } from 'types-sssh';
+import { TTokenPayload, TWork } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { AuthsService } from 'src/auths/auths.service';
+import getWorkDto from './dto/get-works.dto';
 
 @Injectable()
 export class WorkService {
@@ -53,7 +54,7 @@ export class WorkService {
     }
   }
 
-  async getOffWork(user: TTokenPayload, workDetail?: string) {
+  async getOffWork(user: TTokenPayload, off: boolean, workDetail?: string,) {
     const now = this.getDateStr();
 
     const work = await this.workRepository.findOne({
@@ -64,14 +65,13 @@ export class WorkService {
     });
 
     if (!work) throw new NotAcceptableException(ExceptionMessages.NOT_EXIST_WORK);
-    else if (work.offTime) throw new NotAcceptableException(ExceptionMessages.ALREADY_WORK);
+    else if (off && work.offTime) throw new NotAcceptableException(ExceptionMessages.ALREADY_WORK);
 
     if (workDetail) work.workDetail = workDetail;
 
-    return await this.workRepository.save({
-      ...work,
-      offTime: new Date()
-    });
+    if (off) work.offTime = new Date()
+
+    return await this.workRepository.save(work);
   }
 
   async deleteWorks(user: TTokenPayload, id: string, baseDates: string[]) {
@@ -91,6 +91,49 @@ export class WorkService {
     });
 
     return deleteWorks;
+  }
+
+  async getTodayWorkedMembers() {
+
+    const work = await this.workRepository.find({
+      where: {
+        baseDate: this.getDateStr()
+      },
+      select: {
+        user: {
+          userName: true,
+          userRole: true
+        }
+      },
+      relations: ['user']
+    });
+
+    return work.map(w => w.user);
+  }
+
+  async getWorks(user: TTokenPayload, getWorkDto: getWorkDto): Promise<TWork[]> {
+    const { id, startDate, endDate } = getWorkDto;
+
+    const targetUser = await this.userRepository.findOne({
+      where: { id }
+    });
+
+    if (!this.authsService.checkRole(targetUser.userRole, user.userRole, id, user.id))
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+
+    const work = this.workRepository.find({
+      where: {
+        userUuid: id,
+        baseDate: Between(startDate, endDate)
+      },
+      select: {
+        baseDate: true,
+        workDetail: true,
+        offTime: true
+      }
+    });
+
+    return work;
   }
 
   private async getOffPreviousWorks(today: Date, qr: QueryRunner) {

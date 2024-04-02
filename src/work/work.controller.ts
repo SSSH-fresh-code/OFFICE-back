@@ -1,15 +1,30 @@
-import { Body, Controller, Delete, Get, ParseArrayPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Delete, Get, ParseArrayPipe, ParseBoolPipe, Patch, Post, Query } from '@nestjs/common';
 import { WorkService } from './work.service';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 import { User } from 'src/common/decorator/user.decorator';
-import { TTokenPayload } from 'types-sssh';
+import { TTokenPayload, TWork } from 'types-sssh';
+import getWorkDto from './dto/get-works.dto';
+import { userInfo } from 'os';
 
 @Roles('MANAGER')
 @Controller('work')
 @ApiCookieAuth('access')
 export class WorkController {
   constructor(private readonly workService: WorkService) { }
+
+  @Get('')
+  async getWorks(
+    @User() user: TTokenPayload
+    , @Query() query: getWorkDto
+  ): Promise<TWork[]> {
+    return await this.workService.getWorks(user, query);
+  }
+
+  @Get('today')
+  async getTodayWorkedMembers() {
+    return await this.workService.getTodayWorkedMembers();
+  }
 
   @Post('')
   async goToWork(@User() user: TTokenPayload) {
@@ -23,9 +38,10 @@ export class WorkController {
       }
     },
   })
+
   @Patch('')
-  async getOffWork(@User() user: TTokenPayload, @Body('workDetail') workDetail?: string) {
-    return await this.workService.getOffWork(user, workDetail);
+  async getOffWork(@User() user: TTokenPayload, @Query('off', new DefaultValuePipe(false), ParseBoolPipe) off: boolean, @Body('workDetail') workDetail?: string) {
+    return await this.workService.getOffWork(user, off, workDetail);
   }
 
   @ApiQuery({

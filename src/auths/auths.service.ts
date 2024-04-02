@@ -127,7 +127,7 @@ export class AuthsService {
    * @param role 현재 권한
    * @returns 권한 통과 여부
    */
-  checkRole(requireRole: TUserRole, role: any): boolean {
+  checkRole(requireRole: TUserRole, role: any, targetId?: string, realId?: string): boolean {
     if (!role) return false;
     if (requireRole === role) return true;
 
@@ -135,7 +135,7 @@ export class AuthsService {
       case "MANAGER":
         return role === "ADMIN";
       case "USER":
-        return role === "ADMIN" || role === "MANAGER";
+        return role === "ADMIN" || role === "MANAGER" || targetId === realId;
       case "GUEST":
         return true;
     }
