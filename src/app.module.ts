@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
@@ -21,8 +19,8 @@ import { WorkModule } from './work/work.module';
     AuthsModule,
     WorkModule,
   ],
-  controllers: [AppController],
-  providers: [AppService,
+  controllers: [],
+  providers: [
     {
       provide: APP_GUARD,
       useClass: TokenGuard

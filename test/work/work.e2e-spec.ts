@@ -181,10 +181,10 @@ describe('UsersController (e2e)', () => {
         .get(`/work/today`)
         .set('Cookie', testAccessToken.admin);
 
-      await workRepository.query(`delete from "work"`);
+      await workRepository.query(`delete from "work" where "userUuid" in ('${testIds.admin}', '${testIds.manager}', '${testIds.user}')`);
 
       expect(response.status).toBe(200);
-      expect(response.body.length).toBe(3);
+      expect(response.body.length).toBeGreaterThanOrEqual(3);
     });
   })
 

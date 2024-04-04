@@ -1,17 +1,21 @@
-import { BadRequestException, ConsoleLogger, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
-import { compare, genSalt, hash } from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
+import { genSalt, hash } from 'bcrypt';
 import { TTokenPayload, TUserRole } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import { CreateAlarmsDto } from './dto/create-alarms.dto';
+import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
+import { AlarmsEntity } from './entities/alarms.entity';
+import { UpdateAlarmsDto } from './dto/update-alarms.dto';
 
 @Injectable()
 export class AuthsService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    @Inject('ALARMS_REPOSITORY')
+    private readonly alarmsRepository: Repository<AlarmsEntity>,
   ) { }
 
   async encryptPassword(password: string) {
@@ -141,5 +145,61 @@ export class AuthsService {
     }
 
     return false;
+  }
+
+  async postAlarms(dto: CreateAlarmsDto) {
+    const alarmsEntity = await this.alarmsRepository.create(dto);
+
+    return await this.alarmsRepository.save(alarmsEntity);
+  }
+
+  async patchAlarms(dto: UpdateAlarmsDto) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+
+    return await this.alarmsRepository.save({
+      ...alarm,
+      ...dto
+    });
+  }
+
+  async getAlarms(user: TTokenPayload) {
+    let where: FindOptionsWhere<AlarmsEntity>;
+
+    switch (user.userRole) {
+      case 'GUEST':
+        where = { userRole: "GUEST" }
+        break;
+      case 'USER':
+        where = { userRole: Or(Equal("GUEST"), Equal("USER")) }
+        break;
+      case 'MANAGER':
+        where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER")) }
+        break;
+      case 'ADMIN':
+        where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER"), Equal("ADMIN")) }
+        break;
+    }
+
+    return this.alarmsRepository.find({
+      where, order: {
+        order: 'ASC'
+      }
+    });
+  }
+  async deleteAlarms(id: number) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: { id: id }
+    })
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.alarmsRepository.delete(alarm);
   }
 }

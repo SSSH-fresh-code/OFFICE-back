@@ -112,7 +112,9 @@ export class WorkService {
   }
 
   async getWorks(user: TTokenPayload, getWorkDto: getWorkDto): Promise<TWork[]> {
-    const { id, startDate, endDate } = getWorkDto;
+    const { startDate, endDate } = getWorkDto;
+
+    const id = getWorkDto.id ? getWorkDto.id : user.id;
 
     const targetUser = await this.userRepository.findOne({
       where: { id }

@@ -3,7 +3,7 @@ import { UserEntity } from '../entities/user.entity';
 import { IsString, Length } from 'class-validator';
 import { stringValidationMessage } from 'src/common/message/string-validation.message';
 import { legnthValidationMessage } from 'src/common/message/length-validation.message';
-import { ApiBody, ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto extends PickType(UserEntity, [
   'userId',

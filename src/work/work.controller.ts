@@ -40,7 +40,11 @@ export class WorkController {
   })
 
   @Patch('')
-  async getOffWork(@User() user: TTokenPayload, @Query('off', new DefaultValuePipe(false), ParseBoolPipe) off: boolean, @Body('workDetail') workDetail?: string) {
+  async getOffWork(
+    @User() user: TTokenPayload
+    , @Query('off', new DefaultValuePipe(false), ParseBoolPipe) off: boolean
+    , @Body('workDetail') workDetail?: string
+  ) {
     return await this.workService.getOffWork(user, off, workDetail);
   }
 
