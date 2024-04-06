@@ -48,7 +48,6 @@ export class CreateAlarmsDto extends PickType(AlarmsEntity, [
   })
   contents: string;
 
-  @Length(2, 50, { message: legnthValidationMessage })
   @IsOptional()
   @ApiProperty({
     example: "#todayWork"

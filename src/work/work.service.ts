@@ -131,7 +131,8 @@ export class WorkService {
       select: {
         baseDate: true,
         workDetail: true,
-        offTime: true
+        offTime: true,
+        createdAt: true
       }
     });
 

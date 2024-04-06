@@ -1,9 +1,9 @@
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { TUserRole, TAlarms } from 'types-sssh';
+import { TUserRole, IAlarms } from 'types-sssh';
 
 @Entity('alarms')
-export class AlarmsEntity extends BaseEntity implements TAlarms {
+export class AlarmsEntity extends BaseEntity implements IAlarms {
   @PrimaryGeneratedColumn('increment')
   id: number;
 

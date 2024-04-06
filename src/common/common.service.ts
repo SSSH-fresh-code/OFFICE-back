@@ -3,8 +3,8 @@ import { BaseEntity } from './entities/base.entity';
 import { PaginationDto } from './dto/pagination.dto';
 import { FindManyOptions, FindOptions, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { FILTER_MAPPER } from './const/filter-mapper.const';
-import { PaginationResult } from './dto/pagination-result.dto';
 import { ExceptionMessages } from './message/exception.message';
+import { Page } from 'types-sssh';
 
 @Injectable()
 export class CommonService {
@@ -12,7 +12,7 @@ export class CommonService {
     dto: PaginationDto,
     repo: Repository<T>,
     overrideFindOptions?: FindManyOptions<T>
-  ): Promise<PaginationResult<T>> {
+  ): Promise<Page<T>> {
     const findOptions = {
       ...this.composeFindOptions<T>(dto),
       ...overrideFindOptions

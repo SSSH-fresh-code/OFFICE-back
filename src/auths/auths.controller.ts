@@ -1,17 +1,32 @@
-import { Body, Controller, Delete, Get, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { AuthsService } from "./auths.service";
-import { TTokenPayload } from "types-sssh";
+import { Page, TTokenPayload, TWork } from "types-sssh";
 import { User } from "src/common/decorator/user.decorator";
 import { CreateAlarmsDto } from "./dto/create-alarms.dto";
 import { UpdateAlarmsDto } from "./dto/update-alarms.dto";
+import { AlarmsPaginationDto } from "./dto/alarms-pagination.dto";
+import { AlarmsEntity } from "./entities/alarms.entity";
 
 @Controller('auths')
 export class AuthsController {
   constructor(private readonly authsService: AuthsService) { }
 
   @Get('alarms')
-  async getAlarms(@User() user: TTokenPayload) {
-    return await this.authsService.getAlarms(user);
+  async getAlarms(
+    @User() user: TTokenPayload,
+    @Query('readOnly', new DefaultValuePipe(false), ParseBoolPipe)
+    readOnly: boolean,
+    @Query() page: AlarmsPaginationDto
+  ): Promise<any[] | Page<AlarmsEntity>> {
+    return await this.authsService.getAlarms(user, readOnly, page);
+  }
+
+  @Get('alarms/:id')
+  async getAlarm(
+    @User() user: TTokenPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return await this.authsService.getAlarm(user, id);
   }
 
   @Post('alarms')
@@ -25,7 +40,7 @@ export class AuthsController {
   }
 
   @Delete('alarms/:id')
-  async deleteAlarms(@Query("id", ParseIntPipe) id: number) {
+  async deleteAlarms(@Param("id", ParseIntPipe) id: number) {
     return await this.authsService.deleteAlarms(id);
   }
 }
