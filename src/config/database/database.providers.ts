@@ -1,10 +1,6 @@
 import { registerAs } from "@nestjs/config";
 import { readFileSync } from "fs";
 import { DataSource, DataSourceOptions } from "typeorm";
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-config({ path: resolve(__dirname, '../../../.env') });
 
 function getTypeOrmConfig(): DataSourceOptions {
   const isProduction = process.env.NEST_MODE === "production";
