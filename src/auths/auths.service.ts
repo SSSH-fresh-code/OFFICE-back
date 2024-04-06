@@ -1,17 +1,28 @@
-import { BadRequestException, ConsoleLogger, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
-import { compare, genSalt, hash } from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
+import { genSalt, hash } from 'bcrypt';
 import { TTokenPayload, TUserRole } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import { CreateAlarmsDto } from './dto/create-alarms.dto';
+import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
+import { AlarmsEntity } from './entities/alarms.entity';
+import { UpdateAlarmsDto } from './dto/update-alarms.dto';
+import { WorkEntity } from 'src/work/entities/work.entity';
+import { AlarmsProvider } from './provider/alarms.provider';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class AuthsService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    @Inject('ALARMS_REPOSITORY')
+    private readonly alarmsRepository: Repository<AlarmsEntity>,
+    @Inject('ALARMS_PROVIDER')
+    private readonly alarmsProvider: AlarmsProvider,
+    private readonly commonService: CommonService
   ) { }
 
   async encryptPassword(password: string) {
@@ -111,7 +122,6 @@ export class AuthsService {
     } catch (e) {
       if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
         throw new BadRequestException(e.message);
-      console.log(e);
       throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
     }
   }
@@ -127,7 +137,8 @@ export class AuthsService {
    * @param role 현재 권한
    * @returns 권한 통과 여부
    */
-  checkRole(requireRole: TUserRole, role: any): boolean {
+  checkRole(rRole: TUserRole, role: any, targetId?: string, realId?: string): boolean {
+    const requireRole = rRole.trim();
     if (!role) return false;
     if (requireRole === role) return true;
 
@@ -135,11 +146,94 @@ export class AuthsService {
       case "MANAGER":
         return role === "ADMIN";
       case "USER":
-        return role === "ADMIN" || role === "MANAGER";
+        return role === "ADMIN" || role === "MANAGER" || targetId === realId;
       case "GUEST":
         return true;
     }
 
     return false;
+  }
+
+  async postAlarms(dto: CreateAlarmsDto) {
+    const alarmsEntity = await this.alarmsRepository.create(dto);
+
+    return await this.alarmsRepository.save(alarmsEntity);
+  }
+
+  async patchAlarms(dto: UpdateAlarmsDto) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+
+    return await this.alarmsRepository.save({
+      ...alarm,
+      ...dto
+    });
+  }
+
+  async getAlarms(user: TTokenPayload, readOnly: boolean, page: PaginationDto) {
+    if (!readOnly) {
+      let where: FindOptionsWhere<AlarmsEntity>;
+
+      switch (user.userRole) {
+        case 'GUEST':
+          where = { userRole: "GUEST" }
+          break;
+        case 'USER':
+          where = { userRole: Or(Equal("GUEST"), Equal("USER")) }
+          break;
+        case 'MANAGER':
+          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER")) }
+          break;
+        case 'ADMIN':
+          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER"), Equal("ADMIN")) }
+          break;
+      }
+
+      const alarms = await this.alarmsRepository.find({
+        where, order: {
+          order: 'ASC'
+        }
+      });
+
+      const aliveAlarms = [];
+
+      for (const a of alarms) {
+        const alive = await this.alarmsProvider.getAlarms(user, a);
+        if (alive) aliveAlarms.push(alive);
+      }
+
+      return aliveAlarms;
+    } else {
+      return await this.commonService.paginate(page, this.alarmsRepository);
+    }
+  }
+
+  async deleteAlarms(id: number) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: { id: id }
+    })
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.alarmsRepository.delete(id);
+  }
+
+  async getAlarm(user: TTokenPayload, id: number) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: { id: id }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+    else if (!this.checkRole(alarm.userRole, user.userRole)) {
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION)
+    }
+
+    return alarm;
   }
 }

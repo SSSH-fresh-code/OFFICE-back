@@ -1,5 +1,4 @@
-import { DefaultValuePipe, Query } from "@nestjs/common";
-import { ApiParam, ApiProperty, ApiQuery } from "@nestjs/swagger";
+import { ApiProperty } from "@nestjs/swagger";
 import { IsIn, IsOptional } from "class-validator";
 import { PaginationDto } from "src/common/dto/pagination.dto";
 

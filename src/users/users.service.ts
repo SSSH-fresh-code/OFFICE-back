@@ -45,7 +45,7 @@ export class UsersService {
    * @returns ACCESS, REFRESH TOKEN
    */
   async register(createUserDto: CreateUserDto) {
-    const { userId, userName, userPw } = createUserDto;
+    const { userId, userName } = createUserDto;
 
     /** id, name 중복검사 */
     await this.duplicateCheck(userId, userName);
