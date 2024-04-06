@@ -1,5 +1,5 @@
+import { registerAs } from "@nestjs/config";
 import { readFileSync } from "fs";
-import { UserEntity } from "src/users/entities/user.entity";
 import { DataSource, DataSourceOptions } from "typeorm";
 
 function getTypeOrmConfig(): DataSourceOptions {
@@ -12,7 +12,7 @@ function getTypeOrmConfig(): DataSourceOptions {
     extra: {
       ssl: { rejectUnauthorized: false }
     },
-    synchronize: false
+    synchronize: false,
   } : {}
 
   const option: DataSourceOptions = {
@@ -41,3 +41,6 @@ export const databaseProviders = [
     },
   },
 ];
+
+export default registerAs('typeorm', () => getTypeOrmConfig());
+export const connectionSource = new DataSource(getTypeOrmConfig() as DataSourceOptions);
