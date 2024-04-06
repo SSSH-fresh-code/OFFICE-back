@@ -10,7 +10,7 @@ export class AlarmsEntity extends BaseEntity implements IAlarms {
   @Column({ type: "smallint", nullable: false })
   order: number;
 
-  @Column({ type: "varchar", length: "30", nullable: false })
+  @Column({ type: "varchar", length: "30", nullable: false, unique: true })
   name: string;
 
   @Column({ type: "varchar", length: "30", nullable: false })
