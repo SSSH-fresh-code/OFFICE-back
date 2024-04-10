@@ -1,6 +1,7 @@
+import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { TUserRole, IAlarms } from 'types-sssh';
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IAlarms } from 'types-sssh';
 
 @Entity('alarms')
 export class AlarmsEntity extends BaseEntity implements IAlarms {
@@ -25,6 +26,8 @@ export class AlarmsEntity extends BaseEntity implements IAlarms {
   @Column({ type: "varchar", length: "50", nullable: true })
   path: string;
 
-  @Column({ type: "char", length: "10", default: 'ADMIN' })
-  userRole: TUserRole;
+  @ManyToMany(() => AuthsEntity)
+  @JoinTable()
+  auths: AuthsEntity[];
+
 }

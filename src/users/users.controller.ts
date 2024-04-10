@@ -22,6 +22,7 @@ import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { CookieOptions, Response } from 'express';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
 @ApiTags('users')
 @Controller('users')
@@ -29,7 +30,6 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) { }
 
   @Post('login')
-  @Roles('GUEST')
   @ApiBasicAuth('login')
   async login(@User() user: TBasicToken, @Res({ passthrough: true }) response: Response) {
     const { accessToken, refreshToken } = await this.usersService.login(user);
@@ -41,13 +41,13 @@ export class UsersController {
       expires: new Date(new Date().getTime() + 5000000),
       maxAge: 360000000
     }
-    response.cookie('accessToken', accessToken, options)
+    response.cookie('refreshToken', refreshToken, options)
 
-    return { refreshToken }
+    return { accessToken }
   }
 
   @Post('refresh')
-  @Roles('GUEST')
+  @ApiCookieAuth('refresh')
   async refresh(
     @Body() { refreshToken }: { refreshToken: string },
     @Res({ passthrough: true }) response: Response
@@ -68,20 +68,18 @@ export class UsersController {
   }
 
   @Post()
-  @Roles('GUEST')
   register(@Body() createUserDto: CreateUserDto) {
     return this.usersService.register(createUserDto);
   }
 
+  @Roles([AuthsEnum.MODIFY_ANOTHER_USER])
   @Post("cert")
-  @Roles('MANAGER')
-  @ApiCookieAuth('access')
+  @ApiBearerAuth('access')
   certUser(@Body('idList') idList: string[]) {
     return this.usersService.certUser(idList);
   }
 
   @Get("exists")
-  @Roles('GUEST')
   @ApiQuery({ name: "userId", required: false, type: "string" })
   @ApiQuery({ name: "userName", required: false, type: "string" })
   async existsUserByUserId(@Query('userId') userId: string, @Query('userName') userName: string) {
@@ -94,30 +92,27 @@ export class UsersController {
     return { isExists: await this.usersService.existsUser(where) };
   }
 
+  @Roles([AuthsEnum.READ_ANOTHER_USER])
   @Get()
-  @Roles('MANAGER')
-  @ApiCookieAuth('access')
+  @ApiBearerAuth('access')
   async findUsers(@Query() query: UserPaginationDto) {
     return await this.usersService.findUsers(query);
   }
 
   @Get(":id")
-  @Roles('USER')
-  @ApiCookieAuth('access')
+  @ApiBearerAuth('access')
   async findUser(@User() user: TTokenPayload, @Param('id') id: string) {
     return await this.usersService.findUser(user, id);
   }
 
   @Patch()
-  @Roles('USER')
-  @ApiCookieAuth('access')
+  @ApiBearerAuth('access')
   async updateUser(@User() user: TTokenPayload, @Body() dto: UpdateUserDto) {
     return await this.usersService.updateUser(user, dto);
   }
 
   @Delete(":id")
-  @Roles('ADMIN')
-  @ApiCookieAuth('access')
+  @ApiBearerAuth('access')
   async deleteUser(@User() user: TTokenPayload, @Param('id') id: string) {
     return await this.usersService.deleteUser(user, id);
   }

@@ -3,8 +3,9 @@ import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
 import { genSalt, hash } from 'bcrypt';
-import { TTokenPayload, TUserRole } from 'types-sssh';
+import { TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import AuthsEnum from './const/auths.enums';
 
 @Injectable()
 export class AuthsService {
@@ -24,14 +25,14 @@ export class AuthsService {
 
   /**
    * 토큰 생성
-   * @param user Pick<UerEntity, "id" | "userRole"> 유저 정보
+   * @param user Pick<UerEntity, "id" | "auths"> 유저 정보
    * @param tokenType ACCESS, REFRESH
    * @returns 토큰 string
    */
-  signToken(user: Pick<UserEntity, "id" | "userRole">, tokenType: TokenType) {
+  signToken(user: Pick<UserEntity, "id" | "auths">, tokenType: TokenType) {
     const payload: TTokenPayload = {
       id: user.id,
-      userRole: user.userRole,
+      auths: tokenType === TokenType.REFRESH ? [] : user.auths.map((a) => a.code),
       type: tokenType,
       iat: new Date().getTime()
     }
@@ -115,30 +116,38 @@ export class AuthsService {
 
   /**
    * 유저 권한 체크 로직
-   * 1) 현재 권한이 없는 경우 false
-   * 2) requireRole이 Guest이거나(public) 현재 권한과 같은 경우 true
-   * 3) 매니저, 유저 인 경우 상위 권한은 true 
-   * 4) 위 결과에 모두 충족하지 못할 경우(있을 수 없음) false
+   * 1) SUEPR001의 슈퍼권한이 있는 경우 패스
+   * 2) 아닌 경우 보유 권한을 검사 
    * @author sssh
    * @param requireRole 필요 권한
    * @param role 현재 권한
    * @returns 권한 통과 여부
    */
-  static checkRole(rRole: TUserRole, role: any, targetId?: string, realId?: string): boolean {
-    const requireRole = rRole.trim();
-    if (!role) return false;
-    if (requireRole === role) return true;
+  static checkAuth(rAuth: string | string[], user: TTokenPayload): boolean {
+    const role = user.auths;
 
-    switch (requireRole) {
-      case "MANAGER":
-        return role === "ADMIN";
-      case "USER":
-        return role === "ADMIN" || role === "MANAGER" || targetId === realId;
-      case "GUEST":
-        return true;
+    if (role.includes(AuthsEnum.SUPER_USER)) return true;
+    if (!role.includes(AuthsEnum.CAN_USE_OFFICE)) return false;
+
+    if (typeof rAuth === "string") {
+      return role.indexOf(rAuth) > -1;
+    } else if (rAuth.length > 0) {
+      let result = false;
+
+      for (const a of rAuth) {
+        if (role.includes(a)) {
+          result = true;
+          break;
+        }
+      }
+      return result;
     }
 
     return false;
+  }
+
+  static checkOwns(targerId: string, id: string): boolean {
+    return targerId === id;
   }
 
 }

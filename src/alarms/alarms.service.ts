@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { TAlarms, TTokenPayload, TUserRole } from 'types-sssh';
+import { TAlarms, TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CreateAlarmsDto } from './dto/create-alarms.dto';
 import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
@@ -47,25 +47,10 @@ export class AlarmsService {
 
   async getAlarms(user: TTokenPayload, readOnly: boolean, page: PaginationDto) {
     if (!readOnly) {
-      let where: FindOptionsWhere<AlarmsEntity>;
-
-      switch (user.userRole) {
-        case 'GUEST':
-          where = { userRole: "GUEST" }
-          break;
-        case 'USER':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER")) }
-          break;
-        case 'MANAGER':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER")) }
-          break;
-        case 'ADMIN':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER"), Equal("ADMIN")) }
-          break;
-      }
-
       const alarms = await this.alarmsRepository.find({
-        where, order: {
+        where: {
+          auths: Or(...user.auths.map(s => Equal({ code: s })))
+        }, order: {
           order: 'ASC'
         }
       });
@@ -99,9 +84,6 @@ export class AlarmsService {
     });
 
     if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
-    else if (!AuthsService.checkRole(alarm.userRole, user.userRole)) {
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION)
-    }
 
     return alarm;
   }

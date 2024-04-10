@@ -1,15 +1,15 @@
 import { Body, Controller, DefaultValuePipe, Delete, Get, ParseArrayPipe, ParseBoolPipe, Patch, Post, Query } from '@nestjs/common';
 import { WorkService } from './work.service';
 import { Roles } from 'src/common/decorator/roles.decorator';
-import { ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 import { User } from 'src/common/decorator/user.decorator';
 import { TTokenPayload, TWork } from 'types-sssh';
 import getWorkDto from './dto/get-works.dto';
-import { userInfo } from 'os';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
-@Roles('MANAGER')
+@Roles([AuthsEnum.CAN_USE_WORK])
 @Controller('work')
-@ApiCookieAuth('access')
+@ApiBearerAuth('access')
 export class WorkController {
   constructor(private readonly workService: WorkService) { }
 
@@ -21,6 +21,7 @@ export class WorkController {
     return await this.workService.getWorks(user, query);
   }
 
+  @Roles([AuthsEnum.READ_ANOTHER_WORK])
   @Get('today')
   async getTodayWorkedMembers() {
     return await this.workService.getTodayWorkedMembers();
@@ -38,7 +39,6 @@ export class WorkController {
       }
     },
   })
-
   @Patch('')
   async getOffWork(
     @User() user: TTokenPayload

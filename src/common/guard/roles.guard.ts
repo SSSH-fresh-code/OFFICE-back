@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorator/roles.decorator';
-import { TUserRole } from 'types-sssh';
 import { AuthsService } from 'src/auths/auths.service';
 import { ExceptionMessages } from '../message/exception.message';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
 /**
  * 권한 검사를 위한 Guard
@@ -17,7 +17,7 @@ import { ExceptionMessages } from '../message/exception.message';
  * 옳지 않은 권한 요청인 경우 ForbiddenException(403)
  */
 @Injectable()
-export class RolesGuard implements CanActivate {
+export class AuthsGuard implements CanActivate {
   constructor(private readonly reflector: Reflector, private readonly authsService: AuthsService) { }
 
   /**
@@ -29,26 +29,22 @@ export class RolesGuard implements CanActivate {
    * @returns 권한 통과 여부 && 정합성 정상 여부
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    let requireRole = this.reflector.getAllAndOverride<TUserRole, string>(ROLES_KEY, [
+    let requireAuths = this.reflector.getAllAndOverride<AuthsEnum[], string>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
 
 
-    if (!requireRole) requireRole = "ADMIN";
+    if (!requireAuths) return true;
 
+    const { user } = context.switchToHttp().getRequest();
 
-    if (requireRole !== "GUEST") {
-      const { user } = context.switchToHttp().getRequest();
+    if (!user) throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ACCOUNT_INFO);
 
-      if (!user) throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ACCOUNT_INFO);
-
-      if (!AuthsService.checkRole(requireRole, user.userRole)) {
-        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-      }
+    if (!AuthsService.checkAuth(requireAuths, user)) {
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
     return true;
   }
-
 }

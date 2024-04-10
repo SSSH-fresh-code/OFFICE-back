@@ -1,6 +1,5 @@
 import {
   CanActivate,
-  ConsoleLogger,
   ExecutionContext,
   Injectable,
 } from '@nestjs/common';
@@ -24,10 +23,9 @@ export class TokenGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    // authorization 토큰이 있다면 우선 설정(로그인, Basic 토큰 사용)
     const t: string = request.headers['authorization'];
     // Basic 토큰이 아닌경우 Cookie에서 가져옴
-    let rawToken = t ? t : this.getTokenInCookie(request.headers.cookie, "accessToken");
+    let rawToken = t ? t : this.getTokenInCookie(request.headers.cookie, "refreshToken");
 
     if (!rawToken) return true;
 
@@ -54,7 +52,7 @@ export class TokenGuard implements CanActivate {
 
   getTokenInCookie(cookie: string, key: string) {
     if (cookie) {
-      const cookies = cookie.split(";").filter(c => c.indexOf("accessToken=") !== -1);
+      const cookies = cookie.split(";").filter(c => c.indexOf(`${key}=`) !== -1);
 
       const c = cookies[0];
 

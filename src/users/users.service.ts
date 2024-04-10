@@ -10,6 +10,7 @@ import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +28,15 @@ export class UsersService {
    */
   async login(user: TBasicToken) {
     const existingUser = await this.validationInLogin(user.userId);
+
+    if (
+      !AuthsService.checkAuth(
+        AuthsEnum.CAN_USE_OFFICE
+        , { type: "ACCESS", ...existingUser, auths: existingUser.auths.map((a) => a.code) }
+      )
+    ) {
+      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+    }
 
     await this.comparePw(user.userPw, existingUser.userPw);
 
@@ -106,11 +116,10 @@ export class UsersService {
 
     if (!u) throw new NotFoundException(ExceptionMessages.NOT_EXIST_USER);
 
-    if (["ADMIN", "MANAGER"].includes(user.userRole)) {
-      if (!AuthsService.checkRole(u.userRole, user.userRole)) {
-        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-      }
-    } else if (user.id !== id) {
+    if (
+      !AuthsService.checkAuth(AuthsEnum.READ_ANOTHER_USER, user)
+      && !AuthsService.checkOwns(id, user.id)
+    ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
@@ -130,20 +139,18 @@ export class UsersService {
    * @returns 
    */
   async updateUser(user: TTokenPayload, dto: UpdateUserDto) {
-    const u = await this.usersRepository.findOneOrFail({
+    const u = await this.usersRepository.findOne({
       where: { id: dto.id }
     });
 
-    if (["ADMIN", "MANAGER"].includes(user.userRole)) {
-      if (!AuthsService.checkRole(u.userRole, user.userRole)) {
-        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-      };
-      if (dto.userRole && !AuthsService.checkRole(dto.userRole, user.userRole)) {
-        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-      }
-    } else if (user.id !== u.id) {
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-    } else if (dto.userRole) {
+    if (!u) {
+      throw new BadRequestException(ExceptionMessages.NOT_EXIST_USER);
+    }
+
+    if (
+      !AuthsService.checkAuth(AuthsEnum.MODIFY_ANOTHER_USER, user)
+      && !AuthsService.checkOwns(u.id, user.id)
+    ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
@@ -173,7 +180,12 @@ export class UsersService {
 
     if (!u) {
       throw new BadRequestException(ExceptionMessages.NOT_EXIST_USER);
-    } if (!AuthsService.checkRole(u.userRole, user.userRole)) {
+    }
+
+    if (
+      !AuthsService.checkAuth(AuthsEnum.READ_ANOTHER_USER, user)
+      && !AuthsService.checkOwns(u.id, user.id)
+    ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
@@ -186,30 +198,39 @@ export class UsersService {
     if (idList.length === 0 || !idList)
       throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
 
-    const ids = await this.usersRepository.find({
+    const users = await this.usersRepository.find({
       where: {
         id: Or(...idList.map(i => Equal(i))),
-        isCertified: false,
-        userRole: "GUEST"
+        isCertified: false
       }
-      , select: ["id"]
     });
 
-    if (ids.length === 0)
+    if (users.length === 0)
       throw new BadRequestException(ExceptionMessages.ALREADY_PRECESSED);
 
-    const u = await this.usersRepository.update(ids.map((i) => i.id), {
-      isCertified: true,
-      userRole: "USER"
-    });
+    for (const u of users) {
+      await this.usersRepository.save({
+        ...u,
+        isCertified: true,
+        auths: [{ code: AuthsEnum.CAN_USE_OFFICE }]
+      })
+    }
 
-    return u;
+    return true;
   }
 
-  refresh(token: string) {
+  async refresh(token: string) {
     const payload = this.authsService.verifyToken(token, TokenType.REFRESH);
 
-    return this.authsService.signToken(payload, TokenType.ACCESS);
+    const user = await this.usersRepository.findOne(
+      {
+        select: ["id", "userPw", "auths", "isCertified"]
+        , where: { id: payload.id }
+        , relations: { auths: true }
+      }
+    );
+
+    return this.authsService.signToken(user, TokenType.ACCESS);
   }
 
   /**
@@ -220,14 +241,20 @@ export class UsersService {
    * @returns Promise<UserEntity> 
    */
   private async validationInLogin(userId: string) {
-    const user = await this.usersRepository.findOne({ select: ["id", "userRole", "userPw", "isCertified"], where: { userId } });
+    const user = await this.usersRepository.findOne(
+      {
+        select: ["id", "userPw", "auths", "isCertified"]
+        , where: {
+          userId
+        }
+        , relations: {
+          auths: true
+        }
+      }
+    );
 
     if (!user)
       throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ID);
-    else if (!user.isCertified)
-      throw new ForbiddenException(ExceptionMessages.NOT_APPROVED);
-    else if (!AuthsService.checkRole("MANAGER", user.userRole))
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
 
     return user;
   }

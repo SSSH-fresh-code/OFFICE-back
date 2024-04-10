@@ -5,4 +5,8 @@ import { AuthsService } from "./auths.service";
 export class AuthsController {
   constructor(private readonly authsService: AuthsService) { }
 
+  @Get('')
+  async getAuths() {
+    // return this.authsService.getAuths();
+  }
 }

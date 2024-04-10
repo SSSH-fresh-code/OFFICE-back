@@ -37,9 +37,9 @@ describe('UsersController (e2e)', () => {
 
         usersRepository = moduleFixture.get("USER_REPOSITORY");
         await usersRepository.query(`
-          INSERT INTO users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin', 'ADMIN', true);
-          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager', 'MANAGER', true);
-          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser', 'USER', true);
+          INSERT INTO users ("userId", "userPw", "userName", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin',  true);
+          insert into users ("userId", "userPw", "userName", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager',  true);
+          insert into users ("userId", "userPw", "userName", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser',  true);
         `)
       })
       .finally(() => { done() });
@@ -246,7 +246,6 @@ describe('UsersController (e2e)', () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.user,
         userName: "수정",
-        userRole: "USER",
         isPwReset: false
       }
       const response = await request(app.getHttpServer())
@@ -258,27 +257,11 @@ describe('UsersController (e2e)', () => {
       expect(response.body.userName).toBe(updateUserDto.userName);
     })
 
-    it('Manager token으로 userRole 수정', async () => {
-      const updateUserDto: UpdateUserDto = {
-        id: testIds.user,
-        userName: "수정",
-        userRole: "MANAGER",
-        isPwReset: false
-      }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.manager)
-        .send(updateUserDto);
-
-      expect(response.status).toBe(200);
-      expect(response.body.userRole).toBe(updateUserDto.userRole);
-    })
 
     it('Admin token으로 Manager 계정 userName, userUser 수정', async () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.user,
         userName: "유저",
-        userRole: "USER",
         isPwReset: false
       }
       const response = await request(app.getHttpServer())
@@ -287,7 +270,6 @@ describe('UsersController (e2e)', () => {
         .send(updateUserDto);
 
       expect(response.status).toBe(200);
-      expect(response.body.userRole).toBe(updateUserDto.userRole);
       expect(response.body.userName).toBe(updateUserDto.userName);
     })
 
@@ -295,7 +277,6 @@ describe('UsersController (e2e)', () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.admin,
         userName: "testAdmin",
-        userRole: "ADMIN",
         isPwReset: true
       }
       const response = await request(app.getHttpServer())
@@ -318,7 +299,6 @@ describe('UsersController (e2e)', () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.user,
         userName: "testAdmin",
-        userRole: "USER",
         isPwReset: false
       }
       const response = await request(app.getHttpServer())
@@ -334,7 +314,6 @@ describe('UsersController (e2e)', () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.admin,
         userName: "수정안됨",
-        userRole: "MANAGER",
         isPwReset: false
       }
       const response = await request(app.getHttpServer())
@@ -350,7 +329,6 @@ describe('UsersController (e2e)', () => {
       const updateUserDto: UpdateUserDto = {
         id: testIds.admin,
         userName: "수정안됨",
-        userRole: "MANAGER",
         isPwReset: false
       }
       const response = await request(app.getHttpServer())
