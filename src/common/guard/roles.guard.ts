@@ -43,7 +43,7 @@ export class RolesGuard implements CanActivate {
 
       if (!user) throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ACCOUNT_INFO);
 
-      if (!this.authsService.checkRole(requireRole, user.userRole)) {
+      if (!AuthsService.checkRole(requireRole, user.userRole)) {
         throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     }

@@ -12,7 +12,7 @@ function getTypeOrmConfig(): DataSourceOptions {
     extra: {
       ssl: { rejectUnauthorized: false }
     },
-    synchronize: true,
+    synchronize: false,
   } : {}
 
   const option: DataSourceOptions = {

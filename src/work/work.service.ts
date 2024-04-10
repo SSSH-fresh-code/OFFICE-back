@@ -82,7 +82,7 @@ export class WorkService {
       where: { id }
     });
 
-    if (!this.authsService.checkRole(targetUser.userRole, user.userRole))
+    if (!AuthsService.checkRole(targetUser.userRole, user.userRole))
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
 
     const deleteWorks = await this.workRepository.delete({
@@ -120,7 +120,7 @@ export class WorkService {
       where: { id }
     });
 
-    if (!this.authsService.checkRole(targetUser.userRole, user.userRole, id, user.id))
+    if (!AuthsService.checkRole(targetUser.userRole, user.userRole, id, user.id))
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
 
     const work = this.workRepository.find({

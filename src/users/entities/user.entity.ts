@@ -1,7 +1,8 @@
 import { Exclude } from 'class-transformer';
+import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { WorkEntity } from 'src/work/entities/work.entity';
-import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { TUsers, TUserRole } from 'types-sssh';
 
 @Entity('users')
@@ -41,4 +42,8 @@ export class UserEntity extends BaseEntity implements TUsers {
 
   @OneToMany(() => WorkEntity, (work) => work.user)
   works: WorkEntity[];
+
+  @ManyToMany(() => AuthsEntity)
+  @JoinTable()
+  auths: AuthsEntity[]
 }

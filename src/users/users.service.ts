@@ -107,7 +107,7 @@ export class UsersService {
     if (!u) throw new NotFoundException(ExceptionMessages.NOT_EXIST_USER);
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
-      if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+      if (!AuthsService.checkRole(u.userRole, user.userRole)) {
         throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     } else if (user.id !== id) {
@@ -135,10 +135,10 @@ export class UsersService {
     });
 
     if (["ADMIN", "MANAGER"].includes(user.userRole)) {
-      if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+      if (!AuthsService.checkRole(u.userRole, user.userRole)) {
         throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       };
-      if (dto.userRole && !this.authsService.checkRole(dto.userRole, user.userRole)) {
+      if (dto.userRole && !AuthsService.checkRole(dto.userRole, user.userRole)) {
         throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
       }
     } else if (user.id !== u.id) {
@@ -173,7 +173,7 @@ export class UsersService {
 
     if (!u) {
       throw new BadRequestException(ExceptionMessages.NOT_EXIST_USER);
-    } if (!this.authsService.checkRole(u.userRole, user.userRole)) {
+    } if (!AuthsService.checkRole(u.userRole, user.userRole)) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
 
@@ -226,7 +226,7 @@ export class UsersService {
       throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ID);
     else if (!user.isCertified)
       throw new ForbiddenException(ExceptionMessages.NOT_APPROVED);
-    else if (!this.authsService.checkRole("MANAGER", user.userRole))
+    else if (!AuthsService.checkRole("MANAGER", user.userRole))
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
 
     return user;
