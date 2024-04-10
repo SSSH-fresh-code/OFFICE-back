@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AuthsService } from 'src/auths/auths.service';
 import { TokenPrefixType, TokenType } from 'src/auths/const/token.const';
+import { TTokenPayload } from 'types-sssh';
 
 /**
  * Token이 존재하는 경우 request 객체 내 user 멤버 객체 생성
@@ -40,7 +41,14 @@ export class TokenGuard implements CanActivate {
         userPw: userPw
       };
     } else {
-      const payload = await this.authsService.verifyToken(token, TokenType.ACCESS);
+      let payload: TTokenPayload;
+
+      if (t) {
+        payload = await this.authsService.verifyToken(token, TokenType.ACCESS);
+      } else {
+        payload = await this.authsService.verifyToken(token, TokenType.REFRESH);
+      }
+
       request.user = {
         type: prefix,
         ...payload

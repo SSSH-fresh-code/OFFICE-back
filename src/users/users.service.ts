@@ -11,6 +11,8 @@ import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
+import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
+import { User } from 'src/common/decorator/user.decorator';
 
 @Injectable()
 export class UsersService {
@@ -219,9 +221,7 @@ export class UsersService {
     return true;
   }
 
-  async refresh(token: string) {
-    const payload = this.authsService.verifyToken(token, TokenType.REFRESH);
-
+  async refresh(payload: TTokenPayload) {
     const user = await this.usersRepository.findOne(
       {
         select: ["id", "userPw", "auths", "isCertified"]
@@ -230,8 +230,22 @@ export class UsersService {
       }
     );
 
-    return this.authsService.signToken(user, TokenType.ACCESS);
+    return {
+      accessToken: await this.authsService.signToken(user, TokenType.ACCESS),
+      refreshToken: await this.authsService.signToken(user, TokenType.REFRESH)
+    }
   }
+
+  async updateAuthUser(dto: UpdateAuthUserDto) {
+    const user = await this.usersRepository.findOne({ where: { id: dto.id } });
+
+    if (user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+
+    return await this.usersRepository.save({
+      ...user,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
+  };
 
   /**
    * - findUserByUserId를 사용하여 존재하는 유저인지 체크

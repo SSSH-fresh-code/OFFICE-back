@@ -6,11 +6,18 @@ import { genSalt, hash } from 'bcrypt';
 import { TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from './const/auths.enums';
+import { DataSource, Repository } from 'typeorm';
+import { AuthsEntity } from './entities/auths.entity';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthsService {
   constructor(
     private readonly jwtService: JwtService,
+    @Inject('AUTHS_REPOSITORY')
+    private readonly authsRepository: Repository<AuthsEntity>,
+    @Inject('USER_REPOSITORY')
+    private readonly usersRepository: Repository<UserEntity>,
   ) { }
 
   async encryptPassword(password: string) {
@@ -150,4 +157,31 @@ export class AuthsService {
     return targerId === id;
   }
 
+  async getAuths() {
+    return await this.authsRepository.find({ order: { code: 'ASC' } });
+  }
+
+  async getAuthsByUser(id: string) {
+    const { auths } = await this.usersRepository.findOne({
+      select: ["id"],
+      where: { id },
+      loadRelationIds: { relations: ["auths"] }
+    });
+
+    return auths;
+  }
+
+  async postAuths(dto: CreateAuthDto) {
+    return await this.authsRepository.save(
+      await this.authsRepository.create(dto)
+    );
+  }
+
+  async deleteAuths(code: string) {
+    const auth = await this.authsRepository.findOne({ where: { code } });
+
+    if (!auth) throw new BadRequestException(ExceptionMessages.NOT_EXIST_CODE);
+
+    return await this.authsRepository.delete(auth);
+  }
 }

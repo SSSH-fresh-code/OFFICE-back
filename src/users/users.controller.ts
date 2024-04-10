@@ -23,6 +23,7 @@ import { UserEntity } from './entities/user.entity';
 import { CookieOptions, Response } from 'express';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
+import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -43,16 +44,16 @@ export class UsersController {
     }
     response.cookie('refreshToken', refreshToken, options)
 
-    return { accessToken }
+    return { accessToken, refreshToken }
   }
 
   @Post('refresh')
   @ApiCookieAuth('refresh')
   async refresh(
-    @Body() { refreshToken }: { refreshToken: string },
+    @User() user: TTokenPayload,
     @Res({ passthrough: true }) response: Response
   ) {
-    const accessToken = await this.usersService.refresh(refreshToken);
+    const { refreshToken, accessToken } = await this.usersService.refresh(user);
 
     const options: CookieOptions = {
       secure: process.env.NEST_MODE === "development" ? true : true,
@@ -63,7 +64,17 @@ export class UsersController {
       maxAge: 360000000
     }
 
-    response.cookie('accessToken', accessToken, options)
+    response.cookie('refreshToken', refreshToken, options);
+
+    return { refreshToken, accessToken };
+  }
+
+  @Get('logout')
+  async logout(
+    @Res({ passthrough: true }) response: Response
+  ) {
+    response.cookie('refreshToken', '');
+
     return true;
   }
 
@@ -109,6 +120,13 @@ export class UsersController {
   @ApiBearerAuth('access')
   async updateUser(@User() user: TTokenPayload, @Body() dto: UpdateUserDto) {
     return await this.usersService.updateUser(user, dto);
+  }
+
+  @Roles([AuthsEnum.CAN_USE_AUTH])
+  @Patch('auth')
+  @ApiBearerAuth('access')
+  async updateAuth(@Body() dto: UpdateAuthUserDto) {
+    return await this.usersService.updateAuthUser(dto);
   }
 
   @Delete(":id")

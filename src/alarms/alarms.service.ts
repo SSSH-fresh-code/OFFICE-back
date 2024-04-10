@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { TAlarms, TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CreateAlarmsDto } from './dto/create-alarms.dto';
@@ -49,8 +49,10 @@ export class AlarmsService {
     if (!readOnly) {
       const alarms = await this.alarmsRepository.find({
         where: {
-          auths: Or(...user.auths.map(s => Equal({ code: s })))
-        }, order: {
+          auths: { code: Or(...user.auths.map(a => Equal(a))) }
+        },
+        relations: ["auths"],
+        order: {
           order: 'ASC'
         }
       });

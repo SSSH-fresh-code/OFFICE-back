@@ -3,8 +3,8 @@ import { AlarmsService } from './alarms.service';
 import { DatabaseModule } from 'src/config/database/database.module';
 import { AlarmsController } from './alarms.controller';
 import { CommonModule } from 'src/common/common.module';
-import { alarmsProviders } from 'src/config/database/auths.providers';
 import { AuthsModule } from 'src/auths/auths.module';
+import { alarmsProviders } from 'src/config/database/alarms.providers';
 
 @Module({
   imports: [CommonModule, DatabaseModule, AuthsModule],
