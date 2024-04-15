@@ -29,9 +29,9 @@ describe('AlarmsController (e2e)', () => {
 
         alarmsRepository = moduleFixture.get("ALARMS_REPOSITORY");
         await alarmsRepository.query(`
-          INSERT INTO users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin', 'ADMIN', true);
-          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager', 'MANAGER', true);
-          insert into users ("userId", "userPw", "userName", "userRole", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser', 'USER', true);
+          INSERT INTO users ("userId", "userPw", "userName", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin', true);
+          insert into users ("userId", "userPw", "userName", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager',  true);
+          insert into users ("userId", "userPw", "userName", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser',  true);
         `)
 
 
@@ -67,9 +67,9 @@ describe('AlarmsController (e2e)', () => {
   describe('/alarms?readOnly=true (GET)', () => {
     it('알람 전체 조회', async () => {
       await alarmsRepository.query(`
-        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "userRole", "order") values ('test1', 'test1', 'test1', 'test1', 'path', 'ADMIN', 999);
-        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "userRole", "order") values ('test2', 'test2', 'test2', 'test2', 'path', 'ADMIN', 999);
-        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "userRole", "order") values ('test3', 'test3', 'test3', 'test3', 'path', 'ADMIN', 999);
+        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test1', 'test1', 'test1', 'test1', 'path', 999);
+        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test2', 'test2', 'test2', 'test2', 'path', 999);
+        INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test3', 'test3', 'test3', 'test3', 'path', 999);
       `);
 
       const response = await request(app.getHttpServer())
@@ -99,7 +99,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())
@@ -119,7 +118,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())
@@ -142,7 +140,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())
@@ -179,7 +176,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())
@@ -205,7 +201,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())
@@ -227,7 +222,6 @@ describe('AlarmsController (e2e)', () => {
         name: "test1",
         title: "test1",
         contents: "test1",
-        userRole: "ADMIN",
         icon: "Hello"
       };
       const response = await request(app.getHttpServer())

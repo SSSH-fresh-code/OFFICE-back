@@ -6,6 +6,7 @@ import { TTokenPayload, TWork } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { AuthsService } from 'src/auths/auths.service';
 import getWorkDto from './dto/get-works.dto';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
 @Injectable()
 export class WorkService {
@@ -75,15 +76,12 @@ export class WorkService {
   }
 
   async deleteWorks(user: TTokenPayload, id: string, baseDates: string[]) {
-    if (user.userRole === "USER" && id !== user.id)
+    if (
+      !AuthsService.checkAuth(AuthsEnum.DELETE_ANOTHER_WORK, user)
+      && !AuthsService.checkOwns(id, user.id)
+    ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
-
-    const targetUser = await this.userRepository.findOne({
-      where: { id }
-    });
-
-    if (!this.authsService.checkRole(targetUser.userRole, user.userRole))
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+    }
 
     const deleteWorks = await this.workRepository.delete({
       userUuid: id,
@@ -94,7 +92,6 @@ export class WorkService {
   }
 
   async getTodayWorkedMembers() {
-
     const work = await this.workRepository.find({
       where: {
         baseDate: this.getDateStr()
@@ -102,7 +99,6 @@ export class WorkService {
       select: {
         user: {
           userName: true,
-          userRole: true
         }
       },
       relations: ['user']
@@ -116,12 +112,12 @@ export class WorkService {
 
     const id = getWorkDto.id ? getWorkDto.id : user.id;
 
-    const targetUser = await this.userRepository.findOne({
-      where: { id }
-    });
-
-    if (!this.authsService.checkRole(targetUser.userRole, user.userRole, id, user.id))
+    if (
+      !AuthsService.checkAuth(AuthsEnum.READ_ANOTHER_WORK, user)
+      && !AuthsService.checkOwns(id, user.id)
+    ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+    }
 
     const work = this.workRepository.find({
       where: {

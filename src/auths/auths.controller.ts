@@ -1,46 +1,44 @@
 import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { AuthsService } from "./auths.service";
-import { Page, TTokenPayload, TWork } from "types-sssh";
-import { User } from "src/common/decorator/user.decorator";
-import { CreateAlarmsDto } from "./dto/create-alarms.dto";
-import { UpdateAlarmsDto } from "./dto/update-alarms.dto";
-import { AlarmsPaginationDto } from "./dto/alarms-pagination.dto";
-import { AlarmsEntity } from "./entities/alarms.entity";
+import { CreateAuthDto } from "./dto/create-auth.dto";
+import { ApiBearerAuth } from "@nestjs/swagger";
+import { Roles } from "src/common/decorator/roles.decorator";
+import AuthsEnum from "./const/auths.enums";
+import { AuthsPaginationDto } from "./dto/auths-pagination.dto";
 
+@Roles([AuthsEnum.CAN_USE_AUTH])
+@ApiBearerAuth('access')
 @Controller('auths')
 export class AuthsController {
   constructor(private readonly authsService: AuthsService) { }
 
-  @Get('alarms')
-  async getAlarms(
-    @User() user: TTokenPayload,
-    @Query('readOnly', new DefaultValuePipe(false), ParseBoolPipe)
-    readOnly: boolean,
-    @Query() page: AlarmsPaginationDto
-  ): Promise<any[] | Page<AlarmsEntity>> {
-    return await this.authsService.getAlarms(user, readOnly, page);
+  @Get('')
+  async getAuths(@Query() page: AuthsPaginationDto) {
+    return await this.authsService.getAuths(page);
+  }
+
+  @Get('all')
+  async getAllAuths() {
+    return await this.authsService.getAllAuths();
+  }
+
+  @Get('users/:id')
+  async getAuthsByUser(@Param('id') id: string) {
+    return await this.authsService.getAuthsByUser(id);
   }
 
   @Get('alarms/:id')
-  async getAlarm(
-    @User() user: TTokenPayload,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    return await this.authsService.getAlarm(user, id);
+  async getAuthsByAlarm(@Param('id', ParseIntPipe) id: number) {
+    return await this.authsService.getAuthsByAlarm(id);
   }
 
-  @Post('alarms')
-  async postAlarms(@Body() createAlarmsDto: CreateAlarmsDto) {
-    return await this.authsService.postAlarms(createAlarmsDto);
+  @Post()
+  async postAuths(@Body() dto: CreateAuthDto) {
+    return await this.authsService.postAuths(dto);
   }
 
-  @Patch('alarms')
-  async patchAlarms(@Body() updateAlarmsDto: UpdateAlarmsDto) {
-    return await this.authsService.patchAlarms(updateAlarmsDto);
-  }
-
-  @Delete('alarms/:id')
-  async deleteAlarms(@Param("id", ParseIntPipe) id: number) {
-    return await this.authsService.deleteAlarms(id);
+  @Delete(":code")
+  async deleteAuths(@Param('code') code: string) {
+    return await this.authsService.deleteAuths(code);
   }
 }

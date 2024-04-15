@@ -1,28 +1,29 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
 import { genSalt, hash } from 'bcrypt';
-import { TTokenPayload, TUserRole } from 'types-sssh';
+import { TTokenPayload } from 'types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
-import { CreateAlarmsDto } from './dto/create-alarms.dto';
-import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
-import { AlarmsEntity } from './entities/alarms.entity';
-import { UpdateAlarmsDto } from './dto/update-alarms.dto';
-import { WorkEntity } from 'src/work/entities/work.entity';
-import { AlarmsProvider } from './provider/alarms.provider';
-import { PaginationDto } from 'src/common/dto/pagination.dto';
+import AuthsEnum from './const/auths.enums';
+import { Repository } from 'typeorm';
+import { AuthsEntity } from './entities/auths.entity';
+import { CreateAuthDto } from './dto/create-auth.dto';
+import { AuthsPaginationDto } from './dto/auths-pagination.dto';
 import { CommonService } from 'src/common/common.service';
+import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
 
 @Injectable()
 export class AuthsService {
   constructor(
     private readonly jwtService: JwtService,
+    @Inject('AUTHS_REPOSITORY')
+    private readonly authsRepository: Repository<AuthsEntity>,
+    @Inject('USER_REPOSITORY')
+    private readonly usersRepository: Repository<UserEntity>,
     @Inject('ALARMS_REPOSITORY')
     private readonly alarmsRepository: Repository<AlarmsEntity>,
-    @Inject('ALARMS_PROVIDER')
-    private readonly alarmsProvider: AlarmsProvider,
-    private readonly commonService: CommonService
+    private readonly commonService: CommonService,
   ) { }
 
   async encryptPassword(password: string) {
@@ -37,14 +38,14 @@ export class AuthsService {
 
   /**
    * 토큰 생성
-   * @param user Pick<UerEntity, "id" | "userRole"> 유저 정보
+   * @param user Pick<UerEntity, "id" | "auths"> 유저 정보
    * @param tokenType ACCESS, REFRESH
    * @returns 토큰 string
    */
-  signToken(user: Pick<UserEntity, "id" | "userRole">, tokenType: TokenType) {
+  signToken(user: Pick<UserEntity, "id" | "auths">, tokenType: TokenType) {
     const payload: TTokenPayload = {
       id: user.id,
-      userRole: user.userRole,
+      auths: tokenType === TokenType.REFRESH ? [] : user.auths.map((a) => a.code),
       type: tokenType,
       iat: new Date().getTime()
     }
@@ -128,112 +129,79 @@ export class AuthsService {
 
   /**
    * 유저 권한 체크 로직
-   * 1) 현재 권한이 없는 경우 false
-   * 2) requireRole이 Guest이거나(public) 현재 권한과 같은 경우 true
-   * 3) 매니저, 유저 인 경우 상위 권한은 true 
-   * 4) 위 결과에 모두 충족하지 못할 경우(있을 수 없음) false
+   * 1) SUEPR001의 슈퍼권한이 있는 경우 패스
+   * 2) 아닌 경우 보유 권한을 검사 
    * @author sssh
    * @param requireRole 필요 권한
    * @param role 현재 권한
    * @returns 권한 통과 여부
    */
-  checkRole(rRole: TUserRole, role: any, targetId?: string, realId?: string): boolean {
-    const requireRole = rRole.trim();
-    if (!role) return false;
-    if (requireRole === role) return true;
+  static checkAuth(rAuth: string | string[], user: TTokenPayload): boolean {
+    const role = user.auths;
 
-    switch (requireRole) {
-      case "MANAGER":
-        return role === "ADMIN";
-      case "USER":
-        return role === "ADMIN" || role === "MANAGER" || targetId === realId;
-      case "GUEST":
-        return true;
+    if (role.includes(AuthsEnum.SUPER_USER)) return true;
+    if (!role.includes(AuthsEnum.CAN_USE_OFFICE)) return false;
+
+    if (typeof rAuth === "string") {
+      return role.indexOf(rAuth) > -1;
+    } else if (rAuth.length > 0) {
+      let result = false;
+
+      for (const a of rAuth) {
+        if (role.includes(a)) {
+          result = true;
+          break;
+        }
+      }
+      return result;
     }
 
     return false;
   }
 
-  async postAlarms(dto: CreateAlarmsDto) {
-    const alarmsEntity = await this.alarmsRepository.create(dto);
-
-    return await this.alarmsRepository.save(alarmsEntity);
+  static checkOwns(targerId: string, id: string): boolean {
+    return targerId === id;
   }
 
-  async patchAlarms(dto: UpdateAlarmsDto) {
-    const alarm = await this.alarmsRepository.findOne({
-      where: {
-        id: dto.id
-      }
+  async getAuths(page: AuthsPaginationDto) {
+    return await this.commonService.paginate(page, this.authsRepository);
+  }
+
+  async getAllAuths() {
+    return await this.authsRepository.find({ order: { description: 'ASC' } });
+  }
+
+  async getAuthsByUser(id: string) {
+    const { auths } = await this.usersRepository.findOne({
+      select: ["id"],
+      where: { id },
+      loadRelationIds: { relations: ["auths"] }
     });
 
-    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
-
-
-    return await this.alarmsRepository.save({
-      ...alarm,
-      ...dto
-    });
+    return auths;
   }
 
-  async getAlarms(user: TTokenPayload, readOnly: boolean, page: PaginationDto) {
-    if (!readOnly) {
-      let where: FindOptionsWhere<AlarmsEntity>;
-
-      switch (user.userRole) {
-        case 'GUEST':
-          where = { userRole: "GUEST" }
-          break;
-        case 'USER':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER")) }
-          break;
-        case 'MANAGER':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER")) }
-          break;
-        case 'ADMIN':
-          where = { userRole: Or(Equal("GUEST"), Equal("USER"), Equal("MANAGER"), Equal("ADMIN")) }
-          break;
-      }
-
-      const alarms = await this.alarmsRepository.find({
-        where, order: {
-          order: 'ASC'
-        }
-      });
-
-      const aliveAlarms = [];
-
-      for (const a of alarms) {
-        const alive = await this.alarmsProvider.getAlarms(user, a);
-        if (alive) aliveAlarms.push(alive);
-      }
-
-      return aliveAlarms;
-    } else {
-      return await this.commonService.paginate(page, this.alarmsRepository);
-    }
-  }
-
-  async deleteAlarms(id: number) {
-    const alarm = await this.alarmsRepository.findOne({
-      where: { id: id }
-    })
-
-    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
-
-    return await this.alarmsRepository.delete(id);
-  }
-
-  async getAlarm(user: TTokenPayload, id: number) {
-    const alarm = await this.alarmsRepository.findOne({
-      where: { id: id }
+  async getAuthsByAlarm(id: number) {
+    const { auths } = await this.alarmsRepository.findOne({
+      select: ["id"],
+      where: { id },
+      loadRelationIds: { relations: ["auths"] }
     });
 
-    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
-    else if (!this.checkRole(alarm.userRole, user.userRole)) {
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION)
-    }
+    return auths;
+  }
 
-    return alarm;
+  async postAuths(dto: CreateAuthDto) {
+    return await this.authsRepository.save(
+      await this.authsRepository.create(dto)
+    );
+  }
+
+  async deleteAuths(code: string) {
+    const auth = await this.authsRepository.findOne({ where: { code } });
+
+    if (!auth) throw new BadRequestException(ExceptionMessages.NOT_EXIST_CODE);
+
+    return await this.authsRepository.delete(auth);
   }
 }

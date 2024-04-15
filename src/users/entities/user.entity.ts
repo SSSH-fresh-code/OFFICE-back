@@ -1,8 +1,8 @@
-import { Exclude } from 'class-transformer';
+import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { WorkEntity } from 'src/work/entities/work.entity';
-import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { TUsers, TUserRole } from 'types-sssh';
+import { Column, DeleteDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { TUsers } from 'types-sssh';
 
 @Entity('users')
 export class UserEntity extends BaseEntity implements TUsers {
@@ -33,12 +33,13 @@ export class UserEntity extends BaseEntity implements TUsers {
   })
   isCertified: boolean;
 
-  @Column({ default: 'GUEST' })
-  userRole: TUserRole;
-
   @DeleteDateColumn()
   isDelete: Date | null;
 
   @OneToMany(() => WorkEntity, (work) => work.user)
   works: WorkEntity[];
+
+  @ManyToMany(() => AuthsEntity, (auths) => auths.code, { nullable: true })
+  @JoinTable()
+  auths: AuthsEntity[];
 }

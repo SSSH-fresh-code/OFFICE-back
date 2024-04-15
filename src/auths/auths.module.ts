@@ -3,11 +3,9 @@ import { AuthsService } from './auths.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from 'src/config/database/database.module';
-import { alarmsProviders } from 'src/config/database/alarms.providers';
 import { AuthsController } from './auths.controller';
+import { authsProviders } from 'src/config/database/auths.providers';
 import { usersProviders } from 'src/config/database/users.providers';
-import { workProviders } from 'src/config/database/work.providers';
-import { AlarmsProvider } from './provider/alarms.provider';
 import { CommonModule } from 'src/common/common.module';
 
 @Module({
@@ -21,14 +19,9 @@ import { CommonModule } from 'src/common/common.module';
   controllers: [AuthsController],
   exports: [AuthsService],
   providers: [
-    AuthsService
-    , ...alarmsProviders
-    , ...usersProviders
-    , ...workProviders
-    , {
-      provide: "ALARMS_PROVIDER",
-      useClass: AlarmsProvider
-    },
-  ],
+    AuthsService,
+    ...authsProviders,
+    ...usersProviders
+  ]
 })
 export class AuthsModule { }

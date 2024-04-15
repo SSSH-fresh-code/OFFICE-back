@@ -1,10 +1,10 @@
 import { PickType } from "@nestjs/mapped-types";
-import { AlarmsEntity } from "../entities/alarms.entity";
-import { IsNumber, IsOptional, IsString, Length } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsString, Length } from "class-validator";
 import { legnthValidationMessage } from "src/common/message/length-validation.message";
 import { stringValidationMessage } from "src/common/message/string-validation.message";
 import { ApiProperty } from "@nestjs/swagger";
-import { TUserRole } from "types-sssh";
+import { AlarmsEntity } from "../entities/alarms.entity";
+import { AuthsEntity } from "src/auths/entities/auths.entity";
 
 export class UpdateAlarmsDto extends PickType(AlarmsEntity, [
   'order', 'id'
@@ -62,10 +62,9 @@ export class UpdateAlarmsDto extends PickType(AlarmsEntity, [
   })
   path: string;
 
-  @Length(2, 10, { message: legnthValidationMessage })
-  @IsString({ message: stringValidationMessage })
+  @IsArray()
   @ApiProperty({
-    example: "ADMIN"
+    example: []
   })
-  userRole: TUserRole;
+  auths: AuthsEntity[];
 }
