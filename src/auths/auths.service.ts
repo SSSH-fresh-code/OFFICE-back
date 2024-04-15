@@ -9,6 +9,9 @@ import AuthsEnum from './const/auths.enums';
 import { Repository } from 'typeorm';
 import { AuthsEntity } from './entities/auths.entity';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { AuthsPaginationDto } from './dto/auths-pagination.dto';
+import { CommonService } from 'src/common/common.service';
+import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
 
 @Injectable()
 export class AuthsService {
@@ -18,6 +21,9 @@ export class AuthsService {
     private readonly authsRepository: Repository<AuthsEntity>,
     @Inject('USER_REPOSITORY')
     private readonly usersRepository: Repository<UserEntity>,
+    @Inject('ALARMS_REPOSITORY')
+    private readonly alarmsRepository: Repository<AlarmsEntity>,
+    private readonly commonService: CommonService,
   ) { }
 
   async encryptPassword(password: string) {
@@ -157,12 +163,26 @@ export class AuthsService {
     return targerId === id;
   }
 
-  async getAuths() {
-    return await this.authsRepository.find({ order: { code: 'ASC' } });
+  async getAuths(page: AuthsPaginationDto) {
+    return await this.commonService.paginate(page, this.authsRepository);
+  }
+
+  async getAllAuths() {
+    return await this.authsRepository.find({ order: { description: 'ASC' } });
   }
 
   async getAuthsByUser(id: string) {
     const { auths } = await this.usersRepository.findOne({
+      select: ["id"],
+      where: { id },
+      loadRelationIds: { relations: ["auths"] }
+    });
+
+    return auths;
+  }
+
+  async getAuthsByAlarm(id: number) {
+    const { auths } = await this.alarmsRepository.findOne({
       select: ["id"],
       where: { id },
       loadRelationIds: { relations: ["auths"] }

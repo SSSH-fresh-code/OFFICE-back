@@ -239,12 +239,14 @@ export class UsersService {
   async updateAuthUser(dto: UpdateAuthUserDto) {
     const user = await this.usersRepository.findOne({ where: { id: dto.id } });
 
-    if (user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+    if (!user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
 
-    return await this.usersRepository.save({
+    const saved = await this.usersRepository.save({
       ...user,
       auths: dto.auths.map((a) => ({ code: a }))
     });
+
+    return saved;
   };
 
   /**

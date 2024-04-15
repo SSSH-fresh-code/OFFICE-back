@@ -9,7 +9,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { WorkEntity } from 'src/work/entities/work.entity';
-import { AuthsService } from 'src/auths/auths.service';
+import { UpdateAuthAlarmsDto } from './dto/update-auth-alarms.dto';
 
 @Injectable()
 export class AlarmsService {
@@ -17,7 +17,6 @@ export class AlarmsService {
     @Inject('ALARMS_REPOSITORY')
     private readonly alarmsRepository: Repository<AlarmsEntity>,
     private readonly commonService: CommonService,
-    private readonly authsService: AuthsService,
     @Inject('USER_REPOSITORY')
     private readonly usersRepository: Repository<UserEntity>,
     @Inject('WORK_REPOSITORY')
@@ -90,6 +89,20 @@ export class AlarmsService {
     return alarm;
   }
 
+  async patchAlarmsAuths(dto: UpdateAuthAlarmsDto) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.alarmsRepository.save({
+      ...alarm,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
+  }
   public async getAlarmsFromName(user: TTokenPayload, alarm: TAlarms) {
     switch (alarm.name) {
       case "CAN_WORK":
