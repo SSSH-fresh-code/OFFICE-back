@@ -3,7 +3,7 @@ import { WorkService } from './work.service';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { ApiBearerAuth, ApiBody, ApiCookieAuth, ApiQuery } from '@nestjs/swagger';
 import { User } from 'src/common/decorator/user.decorator';
-import { TTokenPayload, TWork } from 'types-sssh';
+import { TTokenPayload, TWork } from '@sssh-fresh-code/types-sssh';
 import getWorkDto from './dto/get-works.dto';
 import AuthsEnum from 'src/auths/const/auths.enums';
 

@@ -2,7 +2,7 @@ import { Exclude } from 'class-transformer';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
-import { IWork } from 'types-sssh';
+import { IWork } from '@sssh-fresh-code/types-sssh';
 
 @Entity('work')
 export class WorkEntity extends BaseEntity implements IWork {

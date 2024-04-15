@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { TAlarms, TTokenPayload } from 'types-sssh';
+import { TAlarms, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CreateAlarmsDto } from './dto/create-alarms.dto';
 import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';

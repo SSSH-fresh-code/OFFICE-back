@@ -4,7 +4,7 @@ import { PaginationDto } from './dto/pagination.dto';
 import { FindManyOptions, FindOptions, FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { FILTER_MAPPER } from './const/filter-mapper.const';
 import { ExceptionMessages } from './message/exception.message';
-import { Page } from 'types-sssh';
+import { Page } from '@sssh-fresh-code/types-sssh';
 
 @Injectable()
 export class CommonService {

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { AuthsService } from 'src/auths/auths.service';
 import { TokenPrefixType, TokenType } from 'src/auths/const/token.const';
-import { TTokenPayload } from 'types-sssh';
+import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 
 /**
  * Token이 존재하는 경우 request 객체 내 user 멤버 객체 생성

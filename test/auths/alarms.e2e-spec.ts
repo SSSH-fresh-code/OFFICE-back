@@ -6,7 +6,7 @@ import { ExceptionMessages } from "src/common/message/exception.message";
 import * as request from 'supertest';
 
 import { Repository } from "typeorm";
-import { TAlarms } from "types-sssh";
+import { TAlarms } from '@sssh-fresh-code/types-sssh';
 
 describe('AlarmsController (e2e)', () => {
   let app: INestApplication;

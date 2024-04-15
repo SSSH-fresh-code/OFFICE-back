@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, InternalSe
 import { UserEntity } from 'src/users/entities/user.entity';
 import { Between, DataSource, Equal, IsNull, Not, Or, QueryFailedError, QueryRunner, Repository } from 'typeorm';
 import { WorkEntity } from './entities/work.entity';
-import { TTokenPayload, TWork } from 'types-sssh';
+import { TTokenPayload, TWork } from '@sssh-fresh-code/types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { AuthsService } from 'src/auths/auths.service';
 import getWorkDto from './dto/get-works.dto';

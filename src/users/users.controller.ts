@@ -16,7 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBasicAuth, ApiBearerAuth, ApiBody, ApiCookieAuth, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { User } from 'src/common/decorator/user.decorator';
-import { TBasicToken, TTokenPayload } from 'types-sssh';
+import { TBasicToken, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';

@@ -1,6 +1,6 @@
 import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { AlarmsService } from "./alarms.service";
-import { Page, TTokenPayload, TWork } from "types-sssh";
+import { Page, TTokenPayload, TWork } from "@sssh-fresh-code/types-sssh";
 import { User } from "src/common/decorator/user.decorator";
 import { CreateAlarmsDto } from "../alarms/dto/create-alarms.dto";
 import { UpdateAlarmsDto } from "../alarms/dto/update-alarms.dto";

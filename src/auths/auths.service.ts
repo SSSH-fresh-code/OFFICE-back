@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { UserEntity } from "src/users/entities/user.entity";
 import { TokenPrefixType, TokenType } from "./const/token.const";
 import { genSalt, hash } from 'bcrypt';
-import { TTokenPayload } from 'types-sssh';
+import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from './const/auths.enums';
 import { Repository } from 'typeorm';

@@ -1,7 +1,7 @@
 import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { IAlarms } from 'types-sssh';
+import { IAlarms } from '@sssh-fresh-code/types-sssh';
 
 @Entity('alarms')
 export class AlarmsEntity extends BaseEntity implements IAlarms {

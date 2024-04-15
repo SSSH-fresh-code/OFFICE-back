@@ -5,7 +5,7 @@ import { UserEntity } from './entities/user.entity';
 import { AuthsService } from '../auths/auths.service';
 import { compare } from 'bcrypt';
 import { TokenType } from '../auths/const/token.const';
-import { TBasicToken, TTokenPayload } from 'types-sssh';
+import { TBasicToken, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
