@@ -30,4 +30,4 @@ services:
     volumes:
       - .env:/app/.env
       - .npmrc:/app/.npmrc
-    command: sh -c "npm i && npm run build && npm run start:prod"
+    command: sh -c "rm -rf node_modules && npm install && npm run build && npm run start:prod"
