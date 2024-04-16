@@ -61,10 +61,4 @@ export class UpdateAlarmsDto extends PickType(AlarmsEntity, [
     example: "#todayWork"
   })
   path: string;
-
-  @IsArray()
-  @ApiProperty({
-    example: []
-  })
-  auths: AuthsEntity[];
 }
