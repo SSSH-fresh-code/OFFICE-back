@@ -34,15 +34,6 @@ export class UsersController {
   @ApiBasicAuth('login')
   async login(@User() user: TBasicToken, @Res({ passthrough: true }) response: Response) {
     const { accessToken, refreshToken } = await this.usersService.login(user);
-    const options: CookieOptions = {
-      secure: process.env.NEST_MODE === "development" ? true : true,
-      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
-      httpOnly: true,
-      path: "/",
-      expires: new Date(new Date().getTime() + 5000000),
-      maxAge: 360000000
-    }
-    response.cookie('refreshToken', refreshToken, options)
 
     return { accessToken, refreshToken }
   }
@@ -54,17 +45,6 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     const { refreshToken, accessToken } = await this.usersService.refresh(user);
-
-    const options: CookieOptions = {
-      secure: process.env.NEST_MODE === "development" ? true : true,
-      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
-      httpOnly: true,
-      path: "/",
-      expires: new Date(new Date().getTime() + 5000000),
-      maxAge: 360000000
-    }
-
-    response.cookie('refreshToken', refreshToken, options);
 
     return { refreshToken, accessToken };
   }
