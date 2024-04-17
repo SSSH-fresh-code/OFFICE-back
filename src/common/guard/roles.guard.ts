@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -10,6 +11,7 @@ import { ROLES_KEY } from '../decorator/roles.decorator';
 import { AuthsService } from 'src/auths/auths.service';
 import { ExceptionMessages } from '../message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
+import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 
 /**
  * 권한 검사를 위한 Guard
@@ -37,14 +39,24 @@ export class AuthsGuard implements CanActivate {
 
     if (!requireAuths) return true;
 
-    const { user } = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest();
 
-    if (!user) throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ACCOUNT_INFO);
+    if (req.user) {
+      const user = req.user as TTokenPayload;
 
-    if (!AuthsService.checkAuth(requireAuths, user)) {
-      throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+      if (req.url === "/refresh") {
+        if (user.type !== "REFRESH") throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
+      } else {
+        if (user.type !== "ACCESS") throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
+      }
+
+      if (!AuthsService.checkAuth(requireAuths, user)) {
+        throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
+      }
+
+      return true;
+    } else {
+      throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN)
     }
-
-    return true;
   }
 }
