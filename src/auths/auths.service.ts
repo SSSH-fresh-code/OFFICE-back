@@ -52,10 +52,6 @@ export class AuthsService {
 
     let expiresIn = TokenType.REFRESH ? 3600000 : 300000;
 
-    if (process.env.NEST_MODE === "development") {
-      expiresIn = 999999999;
-    }
-
     return this.jwtService.sign(payload, {
       expiresIn: expiresIn
     });

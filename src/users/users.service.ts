@@ -222,6 +222,9 @@ export class UsersService {
   }
 
   async refresh(payload: TTokenPayload) {
+    // REFRESH TOKEN으로만 가능하게
+    if (payload.type !== "REFRESH") throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
+
     const user = await this.usersRepository.findOne(
       {
         select: ["id", "userPw", "auths", "isCertified"]
