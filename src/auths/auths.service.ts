@@ -50,7 +50,7 @@ export class AuthsService {
       iat: new Date().getTime()
     }
 
-    let expiresIn = TokenType.REFRESH ? 3600000 : 300000;
+    let expiresIn = tokenType === TokenType.REFRESH ? 86400000 : 300000;
 
     return this.jwtService.sign(payload, {
       expiresIn: expiresIn
@@ -111,13 +111,17 @@ export class AuthsService {
    * @param token 
    * @returns TTokenPayload 토큰 내 payload
    */
-  verifyToken(token: string) {
+  async verifyToken(token: string) {
     try {
-      return this.jwtService.verify<TTokenPayload>(token);
+      const v = await this.jwtService.verify<TTokenPayload>(token);
+
+      if (new Date() > new Date(v.exp)) throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
+
+      return v;
     } catch (e) {
-      if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
-        throw new BadRequestException(e.message);
-      throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
+      if (e instanceof Error && e.message === ExceptionMessages.EXPIRED_TOKEN)
+        throw new UnauthorizedException(e.message);
+      throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
     }
   }
 

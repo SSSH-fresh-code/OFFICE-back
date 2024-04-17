@@ -20,7 +20,7 @@ import { TBasicToken, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { CookieOptions, Response } from 'express';
+import { Response } from 'express';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
 import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
