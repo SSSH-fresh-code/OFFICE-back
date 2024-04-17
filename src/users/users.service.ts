@@ -31,6 +31,8 @@ export class UsersService {
   async login(user: TBasicToken) {
     const existingUser = await this.validationInLogin(user.userId);
 
+    await this.comparePw(user.userPw, existingUser.userPw);
+
     if (
       !AuthsService.checkAuth(
         AuthsEnum.CAN_USE_OFFICE
@@ -39,8 +41,6 @@ export class UsersService {
     ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
-
-    await this.comparePw(user.userPw, existingUser.userPw);
 
     return {
       accessToken: await this.authsService.signToken(existingUser, TokenType.ACCESS),
@@ -270,7 +270,7 @@ export class UsersService {
     );
 
     if (!user)
-      throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ID);
+      throw new UnauthorizedException(ExceptionMessages.WRONG_ACCOUNT_INFO);
 
     return user;
   }

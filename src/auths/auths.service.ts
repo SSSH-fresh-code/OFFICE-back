@@ -115,11 +115,9 @@ export class AuthsService {
    * @param token 
    * @returns TTokenPayload 토큰 내 payload
    */
-  verifyToken(token: string, type: TokenType) {
+  verifyToken(token: string) {
     try {
-      const payload = this.jwtService.verify<TTokenPayload>(token);
-      if (type !== payload.type) throw new Error(ExceptionMessages.INVALID_TOKEN);
-      return payload
+      return this.jwtService.verify<TTokenPayload>(token);
     } catch (e) {
       if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
         throw new BadRequestException(e.message);
