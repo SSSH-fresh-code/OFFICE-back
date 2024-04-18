@@ -185,7 +185,7 @@ export class UsersService {
     }
 
     if (
-      !AuthsService.checkAuth(AuthsEnum.READ_ANOTHER_USER, user)
+      !AuthsService.checkAuth(AuthsEnum.DELETE_ANOTHER_USER, user)
       && !AuthsService.checkOwns(u.id, user.id)
     ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);

@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -111,7 +112,7 @@ export class UsersController {
 
   @Delete(":id")
   @ApiBearerAuth('access')
-  async deleteUser(@User() user: TTokenPayload, @Param('id') id: string) {
+  async deleteUser(@User() user: TTokenPayload, @Param('id', ParseUUIDPipe) id: string) {
     return await this.usersService.deleteUser(user, id);
   }
 }
