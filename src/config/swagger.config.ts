@@ -18,14 +18,15 @@ export const swaggerConfig = new DocumentBuilder()
     },
     'access',
   )
-  .addCookieAuth(
-    "refreshToken",
+  .addBearerAuth(
     {
-      name: "refreshToken",
-      type: "apiKey",
-      in: "cookie"
+      name: "refresh",
+      type: "http",
     },
     "refresh"
   )
   .addTag('users')
+  .addTag('auths')
+  .addTag('alarms')
+  .addTag('work')
   .build();

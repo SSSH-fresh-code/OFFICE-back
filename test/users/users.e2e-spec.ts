@@ -1,23 +1,22 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from 'src/app.module';
 import { Repository } from 'typeorm';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import AuthsEnum from 'src/auths/const/auths.enums';
 import { ExceptionMessages } from 'src/common/message/exception.message';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 describe('UsersController (e2e)', () => {
   let app: INestApplication;
-  let usersRepository: Repository<UserEntity>;
+  let repository: Repository<UserEntity>;
 
-  type TestRoles = { admin: string, manager: string, user: string };
+  let date = new Date();
 
-  let testIds: TestRoles = { admin: "", manager: "", user: "" };
-  let testAccessToken: TestRoles = { admin: "", manager: "", user: "" };
-  let testRefreshToken: TestRoles = { admin: "", manager: "", user: "" };
-  let testUserId = "";
+  let user: UserEntity;
+  let user2: UserEntity;
 
   const testUserDto: CreateUserDto = {
     userId: "testId",
@@ -25,6 +24,47 @@ describe('UsersController (e2e)', () => {
     userName: "testName"
   }
 
+  const insertAuths = async (id: string, auths: AuthsEnum[]) => {
+    const authsStr = auths.map(a => `
+      INSERT INTO
+          users_auths_auths ("usersId", "authsCode")
+        VALUES 
+          ('${id}', '${a}');
+    `).join('');
+
+
+    return await repository.query(authsStr);
+  }
+
+  const deleteAuths = async (id: string) => await repository.query(`
+    DELETE FROM
+      users_auths_auths
+    WHERE
+      "usersId" = '${id}';
+  `);
+
+  const getToken = async (isRefesh: boolean = false, idPw: string = "sample:testPw") => {
+    const { body } = await request(app.getHttpServer())
+      .post('/users/login')
+      .set(
+        'authorization'
+        , `Basic ${Buffer.from(idPw).toString('base64')}`
+      );
+
+    return isRefesh ? body.refreshToken : body.accessToken;
+  }
+
+  const req = async (method: "get" | "post" | "patch" | "delete", url: string, body?: string | object, token?: string) => {
+    if (method === "get") {
+      return await request(app.getHttpServer()).get(url).set(token ? 'authorization' : 'a', token ? `Bearer ${token}` : 'b');
+    } else if (method === "post") {
+      return await request(app.getHttpServer()).post(url).set(token ? 'authorization' : 'a', token ? `Bearer ${token}` : 'b').send(body ? body : {});
+    } else if (method === "patch") {
+      return await request(app.getHttpServer()).patch(url).set(token ? 'authorization' : 'a', token ? `Bearer ${token}` : 'b').send(body ? body : {});
+    } else if (method === "delete") {
+      return await request(app.getHttpServer()).delete(url).set(token ? 'authorization' : 'a', token ? `Bearer ${token}` : 'b');
+    }
+  }
 
   beforeAll((done) => {
     Test.createTestingModule({
@@ -35,51 +75,91 @@ describe('UsersController (e2e)', () => {
         app = moduleFixture.createNestApplication();
         await app.init();
 
-        usersRepository = moduleFixture.get("USER_REPOSITORY");
-        await usersRepository.query(`
-          INSERT INTO users ("userId", "userPw", "userName", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin',  true);
-          insert into users ("userId", "userPw", "userName", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager',  true);
-          insert into users ("userId", "userPw", "userName", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser',  true);
-        `)
-      })
-      .finally(() => { done() });
+        repository = moduleFixture.get("USER_REPOSITORY");
+        await repository.query(`
+          INSERT INTO 
+            users ("userId", "userPw", "userName", "isCertified") 
+          VALUES 
+            ('sample', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAcc',  true);
+        `);
+        await repository.query(`
+          INSERT INTO 
+            users ("userId", "userPw", "userName", "isCertified") 
+          VALUES 
+            ('sample2', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAcc2',  true);
+        `);
+
+        user = await repository.findOne({
+          where: {
+            userId: "sample"
+          }
+        })
+        user2 = await repository.findOne({
+          where: {
+            userId: "sample2"
+          }
+        })
+      }).finally(() => done());
+  });
+
+  beforeEach(async () => {
+    date = new Date();
+    await insertAuths(user.id, [AuthsEnum.CAN_USE_OFFICE]);
+  })
+  afterEach(async () => {
+    await deleteAuths(user.id);
+    console.log("time(s) : ", (new Date().getTime() - date.getTime()) / 1000);
   });
 
   describe('/users/login (POST)', () => {
-    it('Admin 로그인', async () => {
+    it('로그인 권한이 있을 때', async () => {
+      // when
       const response = await request(app.getHttpServer())
         .post('/users/login')
-        .set('authorization', `Basic ${Buffer.from("testAdmin:testPw").toString('base64')}`);
+        .set(
+          'authorization'
+          , `Basic ${Buffer.from("sample:testPw").toString('base64')}`
+        );
 
+      // then
       expect(response.status).toBe(201);
-      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
+      expect(response.body.accessToken).toBeDefined();
       expect(response.body.refreshToken).toBeDefined();
-
-      if (response.headers["set-cookie"][0] && response.body.refreshToken) {
-        testAccessToken.admin = response.header["set-cookie"][0];
-        testRefreshToken.admin = response.body.refreshToken;
-      }
     });
 
-    it('Manager 로그인', async () => {
+    it('[에러케이스] 로그인 실패 - 비밀번호가 틀린 경우', async () => {
       const response = await request(app.getHttpServer())
         .post('/users/login')
-        .set('authorization', `Basic ${Buffer.from("testManager:testPw").toString('base64')}`);
+        .set(
+          'authorization'
+          , `Basic ${Buffer.from("sample:wrongPw").toString('base64')}`
+        );
 
-      expect(response.status).toBe(201);
-      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
-      expect(response.body.refreshToken).toBeDefined();
-
-      if (response.headers["set-cookie"][0] && response.body.refreshToken) {
-        testAccessToken.manager = response.header["set-cookie"][0];
-        testRefreshToken.manager = response.body.refreshToken;
-      }
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe(ExceptionMessages.WRONG_ACCOUNT_INFO);
     })
 
-    it('[에러케이스] USER 계정으로 로그인', async () => {
+    it('[에러케이스] 로그인 실패 - 아이디가 틀린 경우', async () => {
       const response = await request(app.getHttpServer())
         .post('/users/login')
-        .set('authorization', `Basic ${Buffer.from("testUser:testPw").toString('base64')}`);
+        .set(
+          'authorization'
+          , `Basic ${Buffer.from("smpale:testPw").toString('base64')}`
+        );
+
+      expect(response.statusCode).toBe(401);
+      expect(response.body.message).toBe(ExceptionMessages.WRONG_ACCOUNT_INFO);
+    })
+
+    it('[에러케이스] 로그인 실패 - 권한이 없는 경우', async () => {
+      await deleteAuths(user.id); // 권한 삭제
+
+      const response = await request(app.getHttpServer())
+        .post('/users/login')
+        .set(
+          'authorization'
+          , `Basic ${Buffer.from("sample:testPw").toString('base64')}`
+        );
 
       expect(response.statusCode).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
@@ -87,153 +167,129 @@ describe('UsersController (e2e)', () => {
   });
 
   describe('/users (GET)', () => {
-    it('Admin Token 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/users')
-        .set('Cookie', testAccessToken.admin)
+    it('[슈퍼권한] 유저 조회', async () => {
+      await insertAuths(user.id, [AuthsEnum.SUPER_USER]);
+
+      const response = await req("get", "/users", undefined, await getToken());
 
       expect(response.statusCode).toBe(200);
       expect(response.body.info).toBeDefined();
-      expect(response.body.info.total).toBeGreaterThanOrEqual(3);
-
-      if (response.body.info.total >= 3) {
-        response.body.data.forEach(element => {
-          if (element.userId === "testAdmin") testIds.admin = element.id
-          else if (element.userId === "testManager") testIds.manager = element.id
-          else if (element.userId === "testUser") testUserId = element.id
-        });
-      }
+      expect(response.body.info.total).toBeGreaterThanOrEqual(1);
     });
 
-    it('Manager Token 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/users')
-        .set('Cookie', testAccessToken.manager)
+    it('유저 조회', async () => {
+      await insertAuths(user.id, [AuthsEnum.READ_ANOTHER_USER]);
+
+      const response = await req("get", "/users", undefined, await getToken());
 
       expect(response.statusCode).toBe(200);
       expect(response.body.info).toBeDefined();
-      expect(response.body.info.total).toBeGreaterThanOrEqual(3);
+      expect(response.body.info.total).toBeGreaterThanOrEqual(1);
+
     });
 
-    it('페이징 기능 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/users?page=1&take=1')
-        .set('Cookie', testAccessToken.manager)
+    it('페이징 테스트', async () => {
+      await repository.query(`
+          INSERT INTO 
+            users ("userId", "userPw", "userName", "isCertified") 
+          VALUES 
+            ('forPaging', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', '페이지테스트',  true);
+        `);
+      await insertAuths(user.id, [AuthsEnum.READ_ANOTHER_USER]);
+
+      const response = await req("get", '/users?page=2&take=1', undefined, await getToken());
 
       expect(response.statusCode).toBe(200);
-      expect(response.body.info.last).toBeGreaterThanOrEqual(3);
+      expect(response.body.data.length).toBe(1);
+      expect(response.body.info.take).toBe(1);
+      expect(response.body.info.current).toBe(2);
+
+      await repository.query(`delete from users where "userId" = 'forPaging'`)
     });
 
-    it('[에러케이스] 토큰 없이 조회', async () => {
-      const response = await request(app.getHttpServer()).get('/users');
+    it('[에러케이스] 권한 없이 조회', async () => {
+      const response = await req("get", "/users", undefined, await getToken());
 
-      expect(response.statusCode).toBe(401);
-      expect(response.body.message).toBe("사용자 정보가 존재하지 않습니다.");
+      expect(response.statusCode).toBe(403);
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
   })
 
   describe('/users/refresh (POST)', () => {
     it('ADMIN 토큰 재발급', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/refresh')
-        .send({ refreshToken: testRefreshToken.admin });
+      const response = await req("post", "/users/refresh", undefined, await getToken(true));
 
       expect(response.statusCode).toBe(201);
-      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy()
+      expect(response.body.refreshToken).toBeDefined();
+      expect(response.body.accessToken).toBeDefined();
     })
 
-    it('MANAGER 토큰 재발급', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/refresh')
-        .send({ refreshToken: testRefreshToken.manager });
+    it('[에러케이스] Access Token으로 재발급 시도', async () => {
+      const response = await req("post", "/users/refresh", undefined, await getToken());
 
-      expect(response.statusCode).toBe(201);
-      expect(response.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy()
-    })
-
-    it('[에커레이스] AccessToken으로 재발급 시도', async () => {
-      // Cookie 에서 token 추출
-      const access = testAccessToken.manager;
-      const token = access.substring(
-        access.indexOf("=", access.indexOf("accessToken")) + 1
-        , access.indexOf(";", access.indexOf("accessToken"))
-      );
-
-      const response = await request(app.getHttpServer())
-        .post('/users/refresh')
-        .send({ refreshToken: token });
-
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode).toBe(401);
       expect(response.body.message).toBe(ExceptionMessages.INVALID_TOKEN);
     })
   })
 
   describe('/users (POST)', () => {
     it('회원가입', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users')
-        .send(testUserDto)
+      const response = await req("post", "/users", testUserDto);
 
       expect(response.statusCode).toBe(201);
       expect(response.body.userId).toBeDefined();
 
-      if (response.body.userId) {
-        testIds.user = response.body.id;
-      }
+      await repository.query(`delete from users where "userId" = '${testUserDto.userId}'`)
     })
 
     it('[에러케이스] 이미 존재하는 아이디', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users')
-        .send({ ...testUserDto, userName: "testName2" })
+      const response = await req("post", "/users", { ...testUserDto, userId: "sample" });
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.EXIST_ID);
     })
 
     it('[에러케이스] 이미 존재하는 이름', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users')
-        .send({ ...testUserDto, userId: "testId2" })
+      const response = await req("post", "/users", { ...testUserDto, userName: "testAcc" });
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.EXIST_NAME);
     });
-
   });
 
   describe('/users/cert (POST)', () => {
     it('승인 대기 유저 승인 처리후 로그인', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/cert')
-        .set('Cookie', testAccessToken.admin)
-        .send({ idList: [testIds.user] });
+      await insertAuths(user.id, [AuthsEnum.MODIFY_ANOTHER_USER]);
+
+      const { body: { id } } = await req("post", "/users", testUserDto);
+
+      const response = await req("post", "/users/cert", { idList: [id] }, await getToken());
 
       expect(response.statusCode).toBe(201);
+
 
       const response2 = await request(app.getHttpServer())
         .post('/users/login')
         .set('authorization', `Basic ${Buffer.from(testUserDto.userId + ":" + testUserDto.userPw).toString('base64')}`);
 
-      expect(response2.statusCode).toBe(403);
-      expect(response2.body.message).toBe(ExceptionMessages.NO_PERMISSION);
+      expect(response2.statusCode).toBe(201);
+
+      await repository.query(`delete from users where "userId" = '${testUserDto.userId}'`)
     });
 
     it('[에러케이스] 이미 처리된 유저 처리', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/cert')
-        .set('Cookie', testAccessToken.manager)
-        .send({ idList: [testIds.user] });
+      await insertAuths(user.id, [AuthsEnum.MODIFY_ANOTHER_USER]);
+
+      const response = await req("post", "/users/cert", { idList: [user.id] }, await getToken());
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.ALREADY_PRECESSED);
     });
 
     it('[에러케이스] 처리 값이 없는 경우', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/users/cert')
-        .set('Cookie', testAccessToken.manager)
-        .send({ idList: [] });
+      await insertAuths(user.id, [AuthsEnum.MODIFY_ANOTHER_USER]);
+
+      const response = await req("post", "/users/cert", { idList: [] }, await getToken());
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.NO_PARAMETER);
@@ -242,158 +298,159 @@ describe('UsersController (e2e)', () => {
 
 
   describe('/users (PATCH)', () => {
-    it('관리자 token으로 userName 수정', async () => {
+    it('userName 수정', async () => {
       const updateUserDto: UpdateUserDto = {
-        id: testIds.user,
-        userName: "수정",
+        id: user.id,
+        userName: "수정한이름",
         isPwReset: false
       }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.admin)
-        .send(updateUserDto);
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
 
       expect(response.status).toBe(200);
       expect(response.body.userName).toBe(updateUserDto.userName);
+
+
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample';`)
     })
 
 
-    it('Admin token으로 Manager 계정 userName, userUser 수정', async () => {
+    it('다른 계정 userName 수정', async () => {
+      await insertAuths(user.id, [AuthsEnum.MODIFY_ANOTHER_USER]);
+
       const updateUserDto: UpdateUserDto = {
-        id: testIds.user,
-        userName: "유저",
+        id: user2.id,
+        userName: "수정한이름2",
         isPwReset: false
       }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.admin)
-        .send(updateUserDto);
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
 
       expect(response.status).toBe(200);
       expect(response.body.userName).toBe(updateUserDto.userName);
+
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc2', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample2';`)
     })
 
-    it('Admin token으로 Admin 계정 비밀번호 초기화', async () => {
+    it('비밀번호 초기화', async () => {
       const updateUserDto: UpdateUserDto = {
-        id: testIds.admin,
-        userName: "testAdmin",
+        id: user.id,
+        userName: user.userName,
         isPwReset: true
       }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.admin)
-        .send(updateUserDto);
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
 
       expect(response.status).toBe(200);
 
       const response2 = await request(app.getHttpServer())
         .post('/users/login')
-        .set('authorization', `Basic ${Buffer.from("testAdmin:a12345678").toString('base64')}`);
+        .set('authorization', `Basic ${Buffer.from(`${user.userId}:a12345678`).toString('base64')}`);
 
       expect(response2.status).toBe(201);
-      expect(response2.headers["set-cookie"][0].indexOf("accessToken=") !== -1).toBeTruthy();
+      expect(response2.body.accessToken).toBeDefined();
       expect(response2.body.refreshToken).toBeDefined();
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample';`)
     });
 
-    it('[에러케이스] 이미 존재하는 유저 이름으로 수정', async () => {
+    it('다른 계정 비밀번호 초기화', async () => {
+      await insertAuths(user.id, [AuthsEnum.MODIFY_ANOTHER_USER]);
+      await insertAuths(user2.id, [AuthsEnum.CAN_USE_OFFICE]);
+
       const updateUserDto: UpdateUserDto = {
-        id: testIds.user,
-        userName: "testAdmin",
+        id: user2.id,
+        userName: "testAcc2",
+        isPwReset: true
+      }
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
+
+      expect(response.status).toBe(200);
+
+      const response2 = await request(app.getHttpServer())
+        .post('/users/login')
+        .set('authorization', `Basic ${Buffer.from(`${user2.userId}:a12345678`).toString('base64')}`);
+
+      expect(response2.status).toBe(201);
+      expect(response2.body.accessToken).toBeDefined();
+      expect(response2.body.refreshToken).toBeDefined();
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc2', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample2';`)
+    })
+
+    it('[에러케이스] 이미 존재하는 유저 이름으로 수정', async () => {
+
+      const updateUserDto: UpdateUserDto = {
+        id: user.id,
+        userName: user2.userName,
         isPwReset: false
       }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.admin)
-        .send(updateUserDto);
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.EXIST_NAME);
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample';`)
     });
 
-    it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
+    it('[에러케이스] 권한 없이 다른 유저 계정 수정', async () => {
       const updateUserDto: UpdateUserDto = {
-        id: testIds.admin,
-        userName: "수정안됨",
-        isPwReset: false
+        id: user2.id,
+        userName: "testAcc2",
+        isPwReset: true
       }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.manager)
-        .send(updateUserDto);
+
+      const response = await req("patch", "/users", updateUserDto, await getToken());
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
-    });
 
-    it('[에러케이스] Manager token으로 Admin 계정 수정', async () => {
-      const updateUserDto: UpdateUserDto = {
-        id: testIds.admin,
-        userName: "수정안됨",
-        isPwReset: false
-      }
-      const response = await request(app.getHttpServer())
-        .patch('/users')
-        .set('Cookie', testAccessToken.manager)
-        .send(updateUserDto);
-
-      expect(response.status).toBe(403);
-      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
+      await repository.query(`UPDATE "users" SET "userName" = 'testAcc2', "userPw" = '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG' WHERE "userId" = 'sample2';`)
     });
   });
 
   describe('/users/${id} (GET)', () => {
-    it('Admin 토큰으로 Admin 유저 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/${testIds.admin}`)
-        .set('Cookie', testAccessToken.admin)
+    it('자신의 유저 정보 조회', async () => {
+      const response = await req("get", `/users/${user.id}`, undefined, await getToken());
 
       expect(response.status).toBe(200);
       expect(response.body).toBeDefined();
-      expect(response.body.id).toBe(testIds.admin);
+      expect(response.body.id).toBe(user.id);
     })
 
-    it('Admin 토큰으로 Manager 유저 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/${testIds.manager}`)
-        .set('Cookie', testAccessToken.admin)
+    it('[슈퍼권한] 다른 유저 정보 조회', async () => {
+      await insertAuths(user.id, [AuthsEnum.SUPER_USER]);
+      const response = await req("get", `/users/${user2.id}`, undefined, await getToken());
 
       expect(response.status).toBe(200);
       expect(response.body).toBeDefined();
-      expect(response.body.id).toBe(testIds.manager);
+      expect(response.body.id).toBe(user2.id);
     })
 
-    it('Manager 토큰으로 유저 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/${testIds.user}`)
-        .set('Cookie', testAccessToken.manager)
+    it('다른 유저 정보 조회', async () => {
+      await insertAuths(user.id, [AuthsEnum.READ_ANOTHER_USER]);
+      const response = await req("get", `/users/${user2.id}`, undefined, await getToken());
 
       expect(response.status).toBe(200);
       expect(response.body).toBeDefined();
-      expect(response.body.id).toBe(testIds.user);
+      expect(response.body.id).toBe(user2.id);
     })
 
-    it('[에러케이스] Manager 토큰으로 Admin 유저 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/${testIds.admin}`)
-        .set('Cookie', testAccessToken.manager)
+    it('[에러케이스] 권한 없이 다른 유저 정보 조회', async () => {
+      const response = await req("get", `/users/${user2.id}`, undefined, await getToken());
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     })
 
     it('[에러케이스] UUID가 아닌 건으로 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/0107a`)
-        .set('Cookie', testAccessToken.manager)
+      const response = await req("get", `/users/0108a`, undefined, await getToken());
 
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.INVALID_UUID);
     })
 
     it('[에러케이스] 존재하지 않는 유저 조회', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/0107a9ec-5ac9-43a1-91d2-a4821491c542`)
-        .set('Cookie', testAccessToken.manager)
+      const response = await req("get", `/users/0107a9ec-5ac9-43a1-91d2-a4821491c542`, undefined, await getToken());
 
       expect(response.status).toBe(404);
       expect(response.body.message).toBe(ExceptionMessages.NOT_EXIST_USER);
@@ -402,40 +459,35 @@ describe('UsersController (e2e)', () => {
 
   describe('/users/exists (GET)', () => {
     it('존재하는 name 검사', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/exists?userName=testAdmin`);
+      const response = await req("get", `/users/exists?userName=testAcc`)
 
       expect(response.statusCode).toBe(200);
       expect(response.body.isExists).toBeTruthy();
     })
 
     it('존재하지 않은 name 검사', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/exists?userName=z`);
+      const response = await req("get", `/users/exists?userName=z`)
 
       expect(response.statusCode).toBe(200);
       expect(response.body.isExists).toBeFalsy();
     })
 
     it('존재하는 id 검사', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/exists?userId=testAdmin`);
+      const response = await req("get", `/users/exists?userId=sample`)
 
       expect(response.statusCode).toBe(200);
       expect(response.body.isExists).toBeTruthy();
     })
 
     it('존재하지 않은 name 검사', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/exists?userId=z`);
+      const response = await req("get", `/users/exists?userId=z`)
 
       expect(response.statusCode).toBe(200);
       expect(response.body.isExists).toBeFalsy();
     })
 
     it('[에러케이스] 파라미터를 안넘기는 경우', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/users/exists`);
+      const response = await req("get", `/users/exists`)
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.NO_PARAMETER);
@@ -443,43 +495,38 @@ describe('UsersController (e2e)', () => {
   });
 
   describe('/users (DELETE)', () => {
-    it('생성한 유저 삭제', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/users/${testIds.user}`)
-        .set('Cookie', testAccessToken.admin);
+    it('[에러케이스] 권한 없이 타인 아이디 탈퇴 시도', async () => {
+      const response = await req("delete", `/users/${user2.id}`, undefined, await getToken())
+
+      expect(response.statusCode).toBe(403);
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
+    })
+
+    it('다른 유저 회원 탈퇴', async () => {
+      await insertAuths(user.id, [AuthsEnum.DELETE_ANOTHER_USER]);
+
+      const response = await req("delete", `/users/${user2.id}`, undefined, await getToken())
 
       expect(response.statusCode).toBe(200);
     })
 
     it('[에러케이스] 존재하지 않는 유저 삭제 시도', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/users/${testIds.user}`)
-        .set('Cookie', testAccessToken.admin);
+      const response = await req("delete", `/users/${user2.id}`, undefined, await getToken())
 
       expect(response.statusCode).toBe(400);
       expect(response.body.message).toBe(ExceptionMessages.NOT_EXIST_USER);
     });
 
-    it('[에러케이스] 매니저 계정으로 관리자 계정 삭제 시도', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(`/users/${testIds.admin}`)
-        .set('Cookie', testAccessToken.manager);
+    it('스스로 회원 탈퇴', async () => {
+      const response = await req("delete", `/users/${user.id}`, undefined, await getToken())
 
-      expect(response.statusCode).toBe(403);
-      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
-    });
-
+      expect(response.statusCode).toBe(200);
+    })
   });
 
 
-  afterAll((done) => {
-    usersRepository
-      .query(`delete from users where "userId" in ('${testUserDto.userId}', 'testAdmin','testManager','testUser')`)
-      .then(() => {
-        app.close()
-      })
-      .finally(() => {
-        done();
-      });
-  })
+  afterAll(async () => {
+    await repository
+      .query(`delete from users where "userId" = 'sample' or "userId" = 'sample2'`)
+  });
 });

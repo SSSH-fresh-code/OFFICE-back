@@ -11,8 +11,6 @@ import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
-import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
-import { User } from 'src/common/decorator/user.decorator';
 
 @Injectable()
 export class UsersService {
@@ -31,6 +29,8 @@ export class UsersService {
   async login(user: TBasicToken) {
     const existingUser = await this.validationInLogin(user.userId);
 
+    await this.comparePw(user.userPw, existingUser.userPw);
+
     if (
       !AuthsService.checkAuth(
         AuthsEnum.CAN_USE_OFFICE
@@ -39,8 +39,6 @@ export class UsersService {
     ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
     }
-
-    await this.comparePw(user.userPw, existingUser.userPw);
 
     return {
       accessToken: await this.authsService.signToken(existingUser, TokenType.ACCESS),
@@ -185,7 +183,7 @@ export class UsersService {
     }
 
     if (
-      !AuthsService.checkAuth(AuthsEnum.READ_ANOTHER_USER, user)
+      !AuthsService.checkAuth(AuthsEnum.DELETE_ANOTHER_USER, user)
       && !AuthsService.checkOwns(u.id, user.id)
     ) {
       throw new ForbiddenException(ExceptionMessages.NO_PERMISSION);
@@ -222,6 +220,9 @@ export class UsersService {
   }
 
   async refresh(payload: TTokenPayload) {
+    // REFRESH TOKEN으로만 가능하게
+    if (payload.type !== "REFRESH") throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
+
     const user = await this.usersRepository.findOne(
       {
         select: ["id", "userPw", "auths", "isCertified"]
@@ -236,18 +237,6 @@ export class UsersService {
     }
   }
 
-  async updateAuthUser(dto: UpdateAuthUserDto) {
-    const user = await this.usersRepository.findOne({ where: { id: dto.id } });
-
-    if (!user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
-
-    const saved = await this.usersRepository.save({
-      ...user,
-      auths: dto.auths.map((a) => ({ code: a }))
-    });
-
-    return saved;
-  };
 
   /**
    * - findUserByUserId를 사용하여 존재하는 유저인지 체크
@@ -270,7 +259,7 @@ export class UsersService {
     );
 
     if (!user)
-      throw new UnauthorizedException(ExceptionMessages.NOT_EXIST_ID);
+      throw new UnauthorizedException(ExceptionMessages.WRONG_ACCOUNT_INFO);
 
     return user;
   }

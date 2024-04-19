@@ -12,6 +12,8 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { AuthsPaginationDto } from './dto/auths-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
+import { UpdateAuthUserDto } from 'src/auths/dto/update-auth-user.dto';
+import { UpdateAuthAlarmsDto } from './dto/update-auth-alarms.dto';
 
 @Injectable()
 export class AuthsService {
@@ -50,11 +52,7 @@ export class AuthsService {
       iat: new Date().getTime()
     }
 
-    let expiresIn = TokenType.REFRESH ? 3600000 : 300000;
-
-    if (process.env.NEST_MODE === "development") {
-      expiresIn = 999999999;
-    }
+    let expiresIn = tokenType === TokenType.REFRESH ? 43200000 : 300000;
 
     return this.jwtService.sign(payload, {
       expiresIn: expiresIn
@@ -115,15 +113,17 @@ export class AuthsService {
    * @param token 
    * @returns TTokenPayload 토큰 내 payload
    */
-  verifyToken(token: string, type: TokenType) {
+  async verifyToken(token: string) {
     try {
-      const payload = this.jwtService.verify<TTokenPayload>(token);
-      if (type !== payload.type) throw new Error(ExceptionMessages.INVALID_TOKEN);
-      return payload
+      const v = await this.jwtService.verify<TTokenPayload>(token);
+
+      if (new Date() > new Date(v.exp)) throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
+
+      return v;
     } catch (e) {
-      if (e instanceof Error && e.message === ExceptionMessages.INVALID_TOKEN)
-        throw new BadRequestException(e.message);
-      throw new UnauthorizedException(ExceptionMessages.EXPIRED_TOKEN);
+      if (e instanceof Error && e.message === ExceptionMessages.EXPIRED_TOKEN)
+        throw new UnauthorizedException(e.message);
+      throw new UnauthorizedException(ExceptionMessages.INVALID_TOKEN);
     }
   }
 
@@ -202,6 +202,36 @@ export class AuthsService {
 
     if (!auth) throw new BadRequestException(ExceptionMessages.NOT_EXIST_CODE);
 
-    return await this.authsRepository.delete(auth);
+    return await this.authsRepository.delete({
+      code: auth.code
+    });
+  }
+
+  async updateAuthUser(dto: UpdateAuthUserDto) {
+    const user = await this.usersRepository.findOne({ where: { id: dto.id } });
+
+    if (!user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+
+    const saved = await this.usersRepository.save({
+      ...user,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
+
+    return saved;
+  };
+
+  async updateAuthAlarm(dto: UpdateAuthAlarmsDto) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.alarmsRepository.save({
+      ...alarm,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
   }
 }

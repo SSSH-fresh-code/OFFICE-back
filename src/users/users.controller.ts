@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   Res,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,10 +21,9 @@ import { TBasicToken, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UserPaginationDto } from './dto/user-pagination.dto';
 import { FindOptionsWhere } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
-import { CookieOptions, Response } from 'express';
+import { Response } from 'express';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
-import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -34,15 +34,6 @@ export class UsersController {
   @ApiBasicAuth('login')
   async login(@User() user: TBasicToken, @Res({ passthrough: true }) response: Response) {
     const { accessToken, refreshToken } = await this.usersService.login(user);
-    const options: CookieOptions = {
-      secure: process.env.NEST_MODE === "development" ? true : true,
-      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
-      httpOnly: true,
-      path: "/",
-      expires: new Date(new Date().getTime() + 5000000),
-      maxAge: 360000000
-    }
-    response.cookie('refreshToken', refreshToken, options)
 
     return { accessToken, refreshToken }
   }
@@ -54,17 +45,6 @@ export class UsersController {
     @Res({ passthrough: true }) response: Response
   ) {
     const { refreshToken, accessToken } = await this.usersService.refresh(user);
-
-    const options: CookieOptions = {
-      secure: process.env.NEST_MODE === "development" ? true : true,
-      sameSite: process.env.NEST_MODE === "development" ? 'none' : 'lax',
-      httpOnly: true,
-      path: "/",
-      expires: new Date(new Date().getTime() + 5000000),
-      maxAge: 360000000
-    }
-
-    response.cookie('refreshToken', refreshToken, options);
 
     return { refreshToken, accessToken };
   }
@@ -122,16 +102,10 @@ export class UsersController {
     return await this.usersService.updateUser(user, dto);
   }
 
-  @Roles([AuthsEnum.CAN_USE_AUTH])
-  @Patch('auth')
-  @ApiBearerAuth('access')
-  async updateAuth(@Body() dto: UpdateAuthUserDto) {
-    return await this.usersService.updateAuthUser(dto);
-  }
 
   @Delete(":id")
   @ApiBearerAuth('access')
-  async deleteUser(@User() user: TTokenPayload, @Param('id') id: string) {
+  async deleteUser(@User() user: TTokenPayload, @Param('id', ParseUUIDPipe) id: string) {
     return await this.usersService.deleteUser(user, id);
   }
 }

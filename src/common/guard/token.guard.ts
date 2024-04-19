@@ -25,12 +25,10 @@ export class TokenGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
 
     const t: string = request.headers['authorization'];
-    // Basic 토큰이 아닌경우 Cookie에서 가져옴
-    let rawToken = t ? t : this.getTokenInCookie(request.headers.cookie, "refreshToken");
 
-    if (!rawToken) return true;
+    if (!t) return true;
 
-    const { prefix, token } = this.authsService.extractTokenFromHeader(rawToken);
+    const { prefix, token } = this.authsService.extractTokenFromHeader(t);
 
     if (prefix === TokenPrefixType.BASIC) {
       const { userId, userPw } = this.authsService.decodeBasicToken(token);
@@ -41,13 +39,7 @@ export class TokenGuard implements CanActivate {
         userPw: userPw
       };
     } else {
-      let payload: TTokenPayload;
-
-      if (t) {
-        payload = await this.authsService.verifyToken(token, TokenType.ACCESS);
-      } else {
-        payload = await this.authsService.verifyToken(token, TokenType.REFRESH);
-      }
+      let payload: TTokenPayload = await this.authsService.verifyToken(token);
 
       request.user = {
         type: prefix,

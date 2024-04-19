@@ -5,6 +5,8 @@ import { ApiBearerAuth } from "@nestjs/swagger";
 import { Roles } from "src/common/decorator/roles.decorator";
 import AuthsEnum from "./const/auths.enums";
 import { AuthsPaginationDto } from "./dto/auths-pagination.dto";
+import { UpdateAuthUserDto } from "src/auths/dto/update-auth-user.dto";
+import { UpdateAuthAlarmsDto } from "./dto/update-auth-alarms.dto";
 
 @Roles([AuthsEnum.CAN_USE_AUTH])
 @ApiBearerAuth('access')
@@ -27,9 +29,20 @@ export class AuthsController {
     return await this.authsService.getAuthsByUser(id);
   }
 
+  @Patch('users')
+  @ApiBearerAuth('access')
+  async updateAuth(@Body() dto: UpdateAuthUserDto) {
+    return await this.authsService.updateAuthUser(dto);
+  }
+
   @Get('alarms/:id')
   async getAuthsByAlarm(@Param('id', ParseIntPipe) id: number) {
     return await this.authsService.getAuthsByAlarm(id);
+  }
+
+  @Patch('alarms')
+  async patchAlarmsAuths(@Body() updateAuthAlarmsDto: UpdateAuthAlarmsDto) {
+    return await this.authsService.updateAuthAlarm(updateAuthAlarmsDto);
   }
 
   @Post()

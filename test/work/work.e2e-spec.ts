@@ -1,21 +1,15 @@
-import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import { AppModule } from "src/app.module";
-import { UserEntity } from "src/users/entities/user.entity";
-import { Repository } from "typeorm";
-import * as request from 'supertest';
+import { WorkEntity } from "src/work/entities/work.entity";
+import E2ETestUtil from "../e2e-util.class";
+import AuthsEnum from "src/auths/const/auths.enums";
 import { ExceptionMessages } from "src/common/message/exception.message";
+import { query } from "express";
 
-describe('UsersController (e2e)', () => {
-  let app: INestApplication;
-  let workRepository: Repository<UserEntity>;
-
-  type TestRoles = { admin: string, manager: string, user: string, user2: string };
-
-  let testIds: TestRoles = { admin: "", manager: "", user: "", user2: "" };
-  let testAccessToken: TestRoles = { admin: "", manager: "", user: "", user2: "" };
-  let testRefreshToken: TestRoles = { admin: "", manager: "", user: "", user2: "" };
-  let testUserId = "";
+describe('WorksController (e2e)', () => {
+  let test: E2ETestUtil<WorkEntity>;
+  let date: Date;
+  let sample2IdPw;
 
   beforeAll((done) => {
     Test.createTestingModule({
@@ -23,201 +17,181 @@ describe('UsersController (e2e)', () => {
     })
       .compile()
       .then(async (moduleFixture) => {
-        app = moduleFixture.createNestApplication();
+        const app = moduleFixture.createNestApplication();
         await app.init();
 
-        workRepository = moduleFixture.get("WORK_REPOSITORY");
-        await workRepository.query(`
-          INSERT INTO users ("userId", "userPw", "userName", "isCertified") values ('testAdmin', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testAdmin', true);
-          insert into users ("userId", "userPw", "userName", "isCertified") values ('testManager', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testManager', true);
-          insert into users ("userId", "userPw", "userName", "isCertified") values ('testUser', '$2b$10$hDUNIEnceL9b7FvKwodya.IAU29zXbVJKykfr/H3nmQ3P.ROt4lyG', 'testUser', true);
-        `)
+        test = new E2ETestUtil(app, moduleFixture.get("WORK_REPOSITORY"));
+        await test.setBaseUser();
 
-
-        const adminRes = await request(app.getHttpServer())
-          .post('/users/login')
-          .set('authorization', `Basic ${Buffer.from("testAdmin:testPw").toString('base64')}`);
-
-        testAccessToken.admin = adminRes.header["set-cookie"][0];
-        testRefreshToken.admin = adminRes.body.refreshToken;
-        const managerRes = await request(app.getHttpServer())
-          .post('/users/login')
-          .set('authorization', `Basic ${Buffer.from("testManager:testPw").toString('base64')}`);
-
-        testAccessToken.manager = managerRes.header["set-cookie"][0];
-        testRefreshToken.manager = managerRes.body.refreshToken;
-
-
-        const setIdRes = await request(app.getHttpServer())
-          .get('/users')
-          .set('Cookie', testAccessToken.admin)
-
-        if (setIdRes.body.info.total >= 3) {
-          setIdRes.body.data.forEach(element => {
-            if (element.userId === "testAdmin") testIds.admin = element.id
-            else if (element.userId === "testManager") testIds.manager = element.id
-            else if (element.userId === "testUser") testIds.user = element.id
-          });
-        }
+        sample2IdPw = `${test.users[1].userId}:testPw`;
       })
       .finally(() => { done() });
   });
 
+  beforeEach(async () => {
+    date = new Date();
+    for (const u of test.users) {
+      await test.insertAuths(u.id, [AuthsEnum.CAN_USE_OFFICE, AuthsEnum.CAN_USE_WORK])
+    }
+  })
+  afterEach(async () => {
+    await test.deleteAuths();
+    for (const u of test.users) {
+      await test.repository.query(`delete from work where "userUuid" = '${u.id}'`);
+    }
+    console.log("time(s) : ", (new Date().getTime() - date.getTime()) / 1000);
+  });
+
   describe('/work (GET)', () => {
-    it('work 리스트 조회하기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-04-01');
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-04-02');
+    it('자기 자신 work 리스트 조회하기', async () => {
+      const id = test.users[0].id;
+
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-03-30');
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-04-01');
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-04-02');
       `);
 
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.admin}&startDate=2024-03-30&endDate=2024-04-02`)
-        .set('Cookie', testAccessToken.admin);
-
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.admin}'`);
+      const response
+        = await test.req(
+          "get"
+          , `/work?id=${id}&startDate=2024-03-30&endDate=2024-04-02`
+          , undefined
+          , await test.getToken()
+        );
 
       expect(response.status).toBe(200);
       expect(response.body.length).toBe(3);
-    })
+    });
 
-    it('work 일부 리스트 조회하기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-04-01');
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-04-02');
+    it('work 일부 조회하기', async () => {
+      const id = test.users[0].id;
+
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-03-30');
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-04-01');
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-04-02');
       `);
 
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.admin}&startDate=2024-03-30&endDate=2024-04-01`)
-        .set('Cookie', testAccessToken.admin);
-
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.admin}'`);
+      const response
+        = await test.req(
+          "get"
+          , `/work?id=${id}&startDate=2024-03-30&endDate=2024-04-01`
+          , undefined
+          , await test.getToken()
+        );
 
       expect(response.status).toBe(200);
       expect(response.body.length).toBe(2);
-    })
+    });
 
-    it('admin 토큰으로 manager 리스트 조회하기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '2024-04-01');
+    it('다른 유저 work 리스트 조회하기', async () => {
+      const id = test.users[0].id;
+      const id2 = test.users[1].id;
+      await test.insertAuths(id, [AuthsEnum.READ_ANOTHER_WORK]);
+
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-03-30');
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-04-01');
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-04-02');
       `);
 
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.manager}&startDate=2024-03-30&endDate=2024-04-02`)
-        .set('Cookie', testAccessToken.admin);
+      const response
+        = await test.req(
+          "get"
+          , `/work?id=${id2}&startDate=2024-03-30&endDate=2024-04-02`
+          , undefined
+          , await test.getToken()
+        );
 
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.manager}'`);
+      expect(response.status).toBe(200);
+      expect(response.body.length).toBe(3);
+    });
+
+    it('다른 유저 work 일부 조회하기', async () => {
+      const id = test.users[0].id;
+      const id2 = test.users[1].id;
+      await test.insertAuths(id, [AuthsEnum.READ_ANOTHER_WORK]);
+
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-03-30');
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-04-01');
+        insert into work ("userUuid", "baseDate") values ('${id2}', '2024-04-02');
+      `);
+
+      const response
+        = await test.req(
+          "get"
+          , `/work?id=${id2}&startDate=2024-03-30&endDate=2024-04-01`
+          , undefined
+          , await test.getToken()
+        );
 
       expect(response.status).toBe(200);
       expect(response.body.length).toBe(2);
-    })
+    });
 
-    it('admin 토큰으로 user 리스트 조회하기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.user}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.user}', '2024-04-01');
-      `);
+    it('[에러케이스] 권한 없이 다른 유저 work 조회', async () => {
+      const id2 = test.users[1].id;
 
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.user}&startDate=2024-03-30&endDate=2024-04-02`)
-        .set('Cookie', testAccessToken.admin);
-
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.user}'`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.length).toBe(2);
-    })
-
-    it('manager 토큰으로 user 리스트 조회하기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.user}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.user}', '2024-04-01');
-      `);
-
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.user}&startDate=2024-03-30&endDate=2024-04-02`)
-        .set('Cookie', testAccessToken.manager);
-
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.user}'`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.length).toBe(2);
-    })
-
-    it('[에러케이스] manager 토큰으로 admin 리스트 조회하기', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.admin}&startDate=2024-03-30&endDate=2024-04-02`)
-        .set('Cookie', testAccessToken.manager);
+      const response
+        = await test.req(
+          "get"
+          , `/work?id=${id2}&startDate=2024-03-30&endDate=2024-04-01`
+          , undefined
+          , await test.getToken()
+        );
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
     });
+  });
 
-    it('[에러케이스] date 없이 요청', async () => {
-      const response = await request(app.getHttpServer())
-        .get(`/work?id=${testIds.admin}`)
-        .set('Cookie', testAccessToken.manager);
+  describe('/work/today (GET)', () => {
+    it('오늘 근무한 직원 조회', async () => {
+      await test.insertAuths(undefined, [AuthsEnum.READ_ANOTHER_WORK]);
 
-      expect(response.status).toBe(400);
-      expect(response.body.message.length).toBe(4);
-    });
-  })
-
-  describe('/work (GET)', () => {
-    it('work 리스트 조회하기', async () => {
       const d = new Date();
       const month = d.getMonth() < 9 ? `0${d.getMonth() + 1}` : d.getMonth() + 1;
       const day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
 
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '${d.getFullYear()}-${month}-${day}');
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '${d.getFullYear()}-${month}-${day}');
-        insert into work ("userUuid", "baseDate") values ('${testIds.user}', '${d.getFullYear()}-${month}-${day}');
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${test.users[0].id}', '${d.getFullYear()}-${month}-${day}');
+        insert into work ("userUuid", "baseDate") values ('${test.users[1].id}', '${d.getFullYear()}-${month}-${day}');
       `);
 
-      const response = await request(app.getHttpServer())
-        .get(`/work/today`)
-        .set('Cookie', testAccessToken.admin);
-
-      await workRepository.query(`delete from "work" where "userUuid" in ('${testIds.admin}', '${testIds.manager}', '${testIds.user}')`);
+      const response = await test.req("get", "/work/today", undefined, await test.getToken());
 
       expect(response.status).toBe(200);
-      expect(response.body.length).toBeGreaterThanOrEqual(3);
+      expect(response.body.length).toBeGreaterThanOrEqual(2);
     });
   })
 
   describe('/work (POST)', () => {
     it('출근하기', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/work')
-        .set('Cookie', testAccessToken.admin);
+      const response = await test.req("post", "/work", undefined, await test.getToken());
 
       expect(response.status).toBe(201);
       expect(response.body.isSuccess).toBeTruthy();
     });
 
     it('출근하기 - 퇴근 처리 안된 출근 기록 동시 처리 확인', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '2024-03-30')
+      const id = test.users[0].id;
+
+      await test.repository.query(`
+        insert into work ("userUuid", "baseDate") values ('${id}', '2024-03-30')
       `);
 
-      const response = await request(app.getHttpServer())
-        .post('/work')
-        .set('Cookie', testAccessToken.manager);
+      const response = await test.req("post", "/work", undefined, await test.getToken());
 
       expect(response.status).toBe(201);
       expect(response.body.isSuccess).toBeTruthy();
       expect(response.body.updatedWorks.length).toBeGreaterThanOrEqual(1);
-
-      await workRepository.query(`delete from work where "userUuid" = '${testIds.manager}'`);
     })
 
     it('[에러케이스] 중복출근', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/work')
-        .set('Cookie', testAccessToken.admin);
+      await test.req("post", "/work", undefined, await test.getToken());
+      const response = await test.req("post", "/work", undefined, await test.getToken());
 
       expect(response.status).toBe(406);
       expect(response.body.message).toBe(ExceptionMessages.ALREADY_PRECESSED);
@@ -226,23 +200,25 @@ describe('UsersController (e2e)', () => {
 
   describe('/work (PATCH)', () => {
     it('퇴근 전 업무 기록하기', async () => {
+      // 출근
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
+
       const workDetail = "이런 업무 했습니당.";
-      const response = await request(app.getHttpServer())
-        .patch('/work')
-        .set('Cookie', testAccessToken.admin)
-        .send({ workDetail })
+      const response = await test.req("patch", "/work", { workDetail }, await test.getToken(false, sample2IdPw));
 
       expect(response.status).toBe(200);
       expect(response.body.offTime).toBeNull();
       expect(response.body.workDetail).toBe(workDetail);
+
+      await query
     });
 
     it('퇴근하기', async () => {
+      // 출근
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
+
       const workDetail = "퇴근했습니당";
-      const response = await request(app.getHttpServer())
-        .patch('/work?off=true')
-        .set('Cookie', testAccessToken.admin)
-        .send({ workDetail })
+      const response = await test.req("patch", "/work?off=true", { workDetail }, await test.getToken(false, sample2IdPw));
 
       expect(response.status).toBe(200);
       expect(response.body.offTime !== null).toBeTruthy();
@@ -250,19 +226,18 @@ describe('UsersController (e2e)', () => {
     });
 
     it('[에러케이스] 중복 퇴근하기', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/work?off=true')
-        .set('Cookie', testAccessToken.admin)
-        .send({ workDetail: "" })
+      const workDetail = "퇴근했습니당";
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
+      await test.req("patch", "/work?off=true", { workDetail }, await test.getToken(false, sample2IdPw));
+
+      const response = await test.req("patch", "/work?off=true", { workDetail: "" }, await test.getToken(false, sample2IdPw));
 
       expect(response.status).toBe(406);
       expect(response.body.message).toBe(ExceptionMessages.ALREADY_WORK);
     });
 
     it('[에러케이스] 출근하기 전 퇴근', async () => {
-      const response = await request(app.getHttpServer())
-        .patch('/work?off=true')
-        .set('Cookie', testAccessToken.manager)
+      const response = await test.req("patch", "/work?off=true", { workDetail: "" }, await test.getToken(false, sample2IdPw));
 
       expect(response.status).toBe(406);
       expect(response.body.message).toBe(ExceptionMessages.NOT_EXIST_WORK);
@@ -270,61 +245,49 @@ describe('UsersController (e2e)', () => {
   });
 
   describe('/work (DELETE)', () => {
-    it('출근 기록 삭제하기 - ADMIN', async () => {
+    it('자기 자신 출근 기록 삭제하기', async () => {
       const d = new Date();
       const month = d.getMonth() < 9 ? `0${d.getMonth() + 1}` : d.getMonth() + 1;
       const day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
       const YYYYMMDD = `${d.getFullYear()}-${month}-${day}`;
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
 
-      const response = await request(app.getHttpServer())
-        .delete(`/work?id=${testIds.admin}&baseDates=${YYYYMMDD}`)
-        .set('Cookie', testAccessToken.admin)
+      const response = await test.req("delete", `/work?id=${test.users[1].id}&baseDates=${YYYYMMDD}`, undefined, await test.getToken(false, sample2IdPw));
 
       expect(response.status).toBe(200);
       expect(response.body.affected).toBe(1);
     })
 
-    it('출근 기록 삭제하기 - MANAGER', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '2024-03-30');
-        insert into work ("userUuid", "baseDate") values ('${testIds.manager}', '2024-03-31');
-      `);
+    it('타인의 출근 기록 삭제하기', async () => {
+      await test.insertAuths(undefined, [AuthsEnum.DELETE_ANOTHER_WORK]);
 
-      const response = await request(app.getHttpServer())
-        .delete(`/work?id=${testIds.manager}&baseDates=2024-03-30&baseDates=2024-03-31`)
-        .set('Cookie', testAccessToken.manager)
+      const d = new Date();
+      const month = d.getMonth() < 9 ? `0${d.getMonth() + 1}` : d.getMonth() + 1;
+      const day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
+      const YYYYMMDD = `${d.getFullYear()}-${month}-${day}`;
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
+
+      const response = await test.req("delete", `/work?id=${test.users[1].id}&baseDates=${YYYYMMDD}`, undefined, await test.getToken());
 
       expect(response.status).toBe(200);
-      expect(response.body.affected).toBe(2);
+      expect(response.body.affected).toBe(1);
     })
 
-    it('[에러케이스] MANAGER 토큰으로 ADMIN 출근 기록 지우기', async () => {
-      await workRepository.query(`
-        insert into work ("userUuid", "baseDate") values ('${testIds.admin}', '2024-03-31');
-      `);
+    it('[에러케이스] 권한 없이 타인의 출근 기록 삭제 시도', async () => {
+      const d = new Date();
+      const month = d.getMonth() < 9 ? `0${d.getMonth() + 1}` : d.getMonth() + 1;
+      const day = d.getDate() < 10 ? `0${d.getDate()}` : d.getDate();
+      const YYYYMMDD = `${d.getFullYear()}-${month}-${day}`;
+      await test.req("post", "/work", undefined, await test.getToken(false, sample2IdPw));
 
-      const response = await request(app.getHttpServer())
-        .delete(`/work?id=${testIds.admin}&baseDates=2024-03-31`)
-        .set('Cookie', testAccessToken.manager)
+      const response = await test.req("delete", `/work?id=${test.users[1].id}&baseDates=${YYYYMMDD}`, undefined, await test.getToken());
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
-
-      await workRepository.query(`
-        delete from work where "userUuid" = '${testIds.admin}';
-      `);
     })
-
   })
 
-  afterAll((done) => {
-    workRepository
-      .query(`delete from users where "userId" in ('testAdmin','testManager','testUser'); `)
-      .then(() => {
-        app.close()
-      })
-      .finally(() => {
-        done();
-      });
+  afterAll(() => {
+    test.close();
   })
 });
