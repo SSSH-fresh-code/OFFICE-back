@@ -13,9 +13,6 @@ enum AuthsEnum {
   MODIFY_ANOTHER_WORK = "M0000003",
   DELETE_ANOTHER_WORK = "D0000003",
   READ_ANOTHER_WORK = "R0000003",
-}
-
-export enum AlarmsAuthsEnum {
   ADMIN_ALARMS = "AR000001",
 }
 
