@@ -11,8 +11,6 @@ import { CommonService } from 'src/common/common.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
-import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
-import { User } from 'src/common/decorator/user.decorator';
 
 @Injectable()
 export class UsersService {
@@ -239,18 +237,6 @@ export class UsersService {
     }
   }
 
-  async updateAuthUser(dto: UpdateAuthUserDto) {
-    const user = await this.usersRepository.findOne({ where: { id: dto.id } });
-
-    if (!user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
-
-    const saved = await this.usersRepository.save({
-      ...user,
-      auths: dto.auths.map((a) => ({ code: a }))
-    });
-
-    return saved;
-  };
 
   /**
    * - findUserByUserId를 사용하여 존재하는 유저인지 체크

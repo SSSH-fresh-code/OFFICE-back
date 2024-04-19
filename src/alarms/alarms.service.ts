@@ -2,14 +2,13 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, InternalSe
 import { TAlarms, TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CreateAlarmsDto } from './dto/create-alarms.dto';
-import { Equal, FindOptionsWhere, Or, Repository } from 'typeorm';
+import { Equal, Or, Repository } from 'typeorm';
 import { AlarmsEntity } from './entities/alarms.entity';
 import { UpdateAlarmsDto } from './dto/update-alarms.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { UserEntity } from 'src/users/entities/user.entity';
 import { WorkEntity } from 'src/work/entities/work.entity';
-import { UpdateAuthAlarmsDto } from './dto/update-auth-alarms.dto';
 import { AuthsService } from 'src/auths/auths.service';
 import AuthsEnum from 'src/auths/const/auths.enums';
 
@@ -94,20 +93,6 @@ export class AlarmsService {
     return alarm;
   }
 
-  async patchAlarmsAuths(dto: UpdateAuthAlarmsDto) {
-    const alarm = await this.alarmsRepository.findOne({
-      where: {
-        id: dto.id
-      }
-    });
-
-    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
-
-    return await this.alarmsRepository.save({
-      ...alarm,
-      auths: dto.auths.map((a) => ({ code: a }))
-    });
-  }
   public async getAlarmsFromName(user: TTokenPayload, alarm: TAlarms) {
     switch (alarm.name) {
       case "CAN_WORK":

@@ -12,6 +12,8 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { AuthsPaginationDto } from './dto/auths-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
+import { UpdateAuthUserDto } from 'src/auths/dto/update-auth-user.dto';
+import { UpdateAuthAlarmsDto } from 'src/alarms/dto/update-auth-alarms.dto';
 
 @Injectable()
 export class AuthsService {
@@ -50,7 +52,7 @@ export class AuthsService {
       iat: new Date().getTime()
     }
 
-    let expiresIn = tokenType === TokenType.REFRESH ? 86400000 : 300000;
+    let expiresIn = tokenType === TokenType.REFRESH ? 43200000 : 300000;
 
     return this.jwtService.sign(payload, {
       expiresIn: expiresIn
@@ -201,5 +203,33 @@ export class AuthsService {
     if (!auth) throw new BadRequestException(ExceptionMessages.NOT_EXIST_CODE);
 
     return await this.authsRepository.delete(auth);
+  }
+
+  async updateAuthUser(dto: UpdateAuthUserDto) {
+    const user = await this.usersRepository.findOne({ where: { id: dto.id } });
+
+    if (!user) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+
+    const saved = await this.usersRepository.save({
+      ...user,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
+
+    return saved;
+  };
+
+  async updateAuthAlarm(dto: UpdateAuthAlarmsDto) {
+    const alarm = await this.alarmsRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!alarm) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.alarmsRepository.save({
+      ...alarm,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
   }
 }

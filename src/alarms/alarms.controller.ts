@@ -8,7 +8,6 @@ import { AlarmsPaginationDto } from "../alarms/dto/alarms-pagination.dto";
 import { AlarmsEntity } from "./entities/alarms.entity";
 import { Roles } from "src/common/decorator/roles.decorator";
 import AuthsEnum from "src/auths/const/auths.enums";
-import { UpdateAuthAlarmsDto } from "./dto/update-auth-alarms.dto";
 
 @Controller('alarms')
 export class AlarmsController {
@@ -46,11 +45,6 @@ export class AlarmsController {
     return await this.alarmsService.patchAlarms(updateAlarmsDto);
   }
 
-  @Roles([AuthsEnum.CAN_USE_AUTH])
-  @Patch('auths')
-  async patchAlarmsAuths(@Body() updateAuthAlarmsDto: UpdateAuthAlarmsDto) {
-    return await this.alarmsService.patchAlarmsAuths(updateAuthAlarmsDto);
-  }
 
   @Roles([AuthsEnum.DELETE_ALARMS])
   @Delete(':id')

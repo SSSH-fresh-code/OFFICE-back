@@ -24,7 +24,6 @@ import { UserEntity } from './entities/user.entity';
 import { Response } from 'express';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import AuthsEnum from 'src/auths/const/auths.enums';
-import { UpdateAuthUserDto } from './dto/update-auth-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -103,12 +102,6 @@ export class UsersController {
     return await this.usersService.updateUser(user, dto);
   }
 
-  @Roles([AuthsEnum.CAN_USE_AUTH])
-  @Patch('auth')
-  @ApiBearerAuth('access')
-  async updateAuth(@Body() dto: UpdateAuthUserDto) {
-    return await this.usersService.updateAuthUser(dto);
-  }
 
   @Delete(":id")
   @ApiBearerAuth('access')
