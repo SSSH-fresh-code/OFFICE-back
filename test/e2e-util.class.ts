@@ -34,7 +34,7 @@ export default class E2ETestUtil<T> {
     this.users.push(...[sample[0], sample2[0]]);
   }
 
-  async insertAuths(id: string, auths: AuthsEnum[]) {
+  async insertAuths(id: string = this.users[0].id, auths: AuthsEnum[]) {
     const authsStr = auths.map(a => `
       INSERT INTO
         users_auths_auths("usersId", "authsCode")
