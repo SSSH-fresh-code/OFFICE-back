@@ -13,7 +13,7 @@ import { AuthsPaginationDto } from './dto/auths-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
 import { UpdateAuthUserDto } from 'src/auths/dto/update-auth-user.dto';
-import { UpdateAuthAlarmsDto } from 'src/alarms/dto/update-auth-alarms.dto';
+import { UpdateAuthAlarmsDto } from './dto/update-auth-alarms.dto';
 
 @Injectable()
 export class AuthsService {
@@ -202,7 +202,9 @@ export class AuthsService {
 
     if (!auth) throw new BadRequestException(ExceptionMessages.NOT_EXIST_CODE);
 
-    return await this.authsRepository.delete(auth);
+    return await this.authsRepository.delete({
+      code: auth.code
+    });
   }
 
   async updateAuthUser(dto: UpdateAuthUserDto) {

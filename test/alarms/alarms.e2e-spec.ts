@@ -37,9 +37,7 @@ describe('AlarmsController (e2e)', () => {
 
   afterEach(async () => {
     await test.deleteAuths();
-    for (const u of test.users) {
-      await test.repository.query(`delete from alarms where "order" = 999`);
-    }
+    await test.repository.query(`delete from alarms where "order" = 999`);
     console.log("time(s) : ", (new Date().getTime() - date.getTime()) / 1000);
   });
 

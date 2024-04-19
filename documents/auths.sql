@@ -12,3 +12,4 @@ INSERT INTO "auths" ("createdAt", "updatedAt", code, description) values (now(),
 INSERT INTO "auths" ("createdAt", "updatedAt", code, description) values (now(), now(),	'D0000003',	'DELETE_ANOTHER_WORK');
 INSERT INTO "auths" ("createdAt", "updatedAt", code, description) values (now(), now(),	'R0000003',	'READ_ANOTHER_WORK');
 INSERT INTO "auths" ("createdAt", "updatedAt", code, description) values (now(), now(),	'AR000001',	'ADMIN_ALARMS');
+INSERT INTO "auths" ("createdAt", "updatedAt", code, description) values (now(), now(),	'AR000004',	'CAN_USE_AUTH');
