@@ -1,7 +1,7 @@
 import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { AuthsService } from "./auths.service";
 import { CreateAuthDto } from "./dto/create-auth.dto";
-import { ApiBearerAuth } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Roles } from "src/common/decorator/roles.decorator";
 import AuthsEnum from "./const/auths.enums";
 import { AuthsPaginationDto } from "./dto/auths-pagination.dto";
@@ -11,6 +11,7 @@ import { UpdateAuthAlarmsDto } from "./dto/update-auth-alarms.dto";
 @Roles([AuthsEnum.CAN_USE_AUTH])
 @ApiBearerAuth('access')
 @Controller('auths')
+@ApiTags('auths')
 export class AuthsController {
   constructor(private readonly authsService: AuthsService) { }
 

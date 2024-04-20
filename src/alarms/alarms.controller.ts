@@ -8,8 +8,10 @@ import { AlarmsPaginationDto } from "../alarms/dto/alarms-pagination.dto";
 import { AlarmsEntity } from "./entities/alarms.entity";
 import { Roles } from "src/common/decorator/roles.decorator";
 import AuthsEnum from "src/auths/const/auths.enums";
+import { ApiTags } from "@nestjs/swagger";
 
 @Controller('alarms')
+@ApiTags("alarms")
 export class AlarmsController {
   constructor(private readonly alarmsService: AlarmsService) { }
 

@@ -28,5 +28,5 @@ export const swaggerConfig = new DocumentBuilder()
   .addTag('users')
   .addTag('auths')
   .addTag('alarms')
-  .addTag('work')
+  .addTag('works')
   .build();

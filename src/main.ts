@@ -10,8 +10,10 @@ async function bootstrap() {
 
   app.enableCors({ credentials: true, origin: process.env.CORS_ORIGIN })
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, document);
+  if (process.env.NEST_MODE !== "production") {
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api', app, document);
+  }
 
   /** Filters */
   app.useGlobalFilters(new QueryFailedErrorFilter());
