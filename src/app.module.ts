@@ -8,6 +8,7 @@ import { AuthsGuard } from './common/guard/roles.guard';
 import { TokenGuard } from './common/guard/token.guard';
 import { WorkModule } from './work/work.module';
 import { AlarmsModule } from './alarms/alarms.module';
+import { MenusModule } from './menus/menus.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AlarmsModule } from './alarms/alarms.module';
     AuthsModule,
     WorkModule,
     AlarmsModule,
+    MenusModule,
   ],
   controllers: [],
   providers: [
