@@ -25,7 +25,7 @@ export class MenusEntity extends BaseEntity implements IMenu {
   auths: AuthsEntity[];
 
   @ManyToOne((type) => MenusEntity, (menus) => menus.childMenus)
-  parentMenus: MenusEntity;
+  parentMenus?: MenusEntity;
 
   @OneToMany((type) => MenusEntity, (menus) => menus.parentMenus)
   childMenus: MenusEntity[];

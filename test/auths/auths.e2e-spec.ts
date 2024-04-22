@@ -11,7 +11,6 @@ import { CreateAuthDto } from "src/auths/dto/create-auth.dto";
 describe('AuthsController (e2e)', () => {
   let test: E2ETestUtil<AlarmsEntity>;
   let date: Date;
-  let sample2IdPw;
 
   beforeAll((done) => {
     Test.createTestingModule({

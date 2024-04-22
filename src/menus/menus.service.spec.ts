@@ -8,7 +8,6 @@ import { ExceptionMessages } from 'src/common/message/exception.message';
 
 describe('MenusService', () => {
   let service: MenusService;
-  let repository: jest.Mocked<Repository<MenusEntity>>;
 
   const mockCreateparentMenusDto: CreateMenusDto = {
     order: 1,
@@ -20,6 +19,7 @@ describe('MenusService', () => {
     auths: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+    childMenus: [],
     ...mockCreateparentMenusDto
   }
 
@@ -34,6 +34,7 @@ describe('MenusService', () => {
     auths: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+    childMenus: [],
     ...mockCreateChildMenusDto
   }
 
@@ -46,6 +47,7 @@ describe('MenusService', () => {
       if (v.link) return mockCreateChildMenusEntity;
       else if (v.icon) return mockCreateparentMenusEntity;
     }),
+    findOne: jest.fn((v: MenusEntity) => mockCreateparentMenusEntity)
   });
 
   beforeEach(async () => {
