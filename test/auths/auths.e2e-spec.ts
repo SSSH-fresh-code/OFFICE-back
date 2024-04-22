@@ -7,6 +7,7 @@ import AuthsEnum from "src/auths/const/auths.enums";
 import { UpdateAuthUserDto } from "src/auths/dto/update-auth-user.dto";
 import { UpdateAuthAlarmsDto } from "src/auths/dto/update-auth-alarms.dto";
 import { CreateAuthDto } from "src/auths/dto/create-auth.dto";
+import { UpdateAuthMenusDto } from "src/auths/dto/update-auth-menus.dto";
 
 describe('AuthsController (e2e)', () => {
   let test: E2ETestUtil<AlarmsEntity>;
@@ -203,6 +204,67 @@ describe('AuthsController (e2e)', () => {
       await test.insertAuths(undefined, [AuthsEnum.CAN_USE_OFFICE]);
 
       const response = await test.req("patch", `/auths/alarms`, {}, await test.getToken());
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
+    });
+  });
+
+  describe('/auths/menus/:id (GET)', () => {
+    it('해당 메뉴가 가진 권한 리스트 조회', async () => {
+      const testCode = "TEST0001";
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
+
+
+      await test.repository.query(`insert into auths ("code", "description") values ('${testCode}', 'TEST_AUTH');`)
+      await test.repository.query(`insert into menus_auths_auths ("authsCode", "menusId") values ('${testCode}', '${id}');`)
+
+      const response = await test.req("get", `/auths/menus/${id}`, undefined, await test.getToken());
+
+      expect(response.status).toBe(200);
+      expect(response.body.includes(testCode)).toBeTruthy();
+
+      await test.repository.query(`delete from menus where "order" = 999`);
+    });
+
+    it('[에러케이스] 권한 없이 해당 유저가 가진 권한 리스트 조회 시도', async () => {
+      await test.deleteAuths();
+      await test.insertAuths(undefined, [AuthsEnum.CAN_USE_OFFICE]);
+
+      const response = await test.req("get", `/auths/menus/2`, undefined, await test.getToken());
+
+      expect(response.status).toBe(403);
+      expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
+    });
+  });
+
+  describe('/auths/menus (PATCH)', () => {
+    it('해당 알람 권한 수정', async () => {
+      const testCode = "TEST0001";
+
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
+      await test.repository.query(`insert into auths ("code", "description") values ('${testCode}', 'TEST_AUTH');`)
+
+      const updateAuthMenusDto: UpdateAuthMenusDto = {
+        id: +id,
+        auths: [testCode]
+      }
+
+      const response = await test.req("patch", `/auths/menus`, updateAuthMenusDto, await test.getToken());
+
+      expect(response.status).toBe(200);
+      expect(response.body.auths.length).toBe(1);
+
+      await test.repository.query(`delete from menus where "order" = 999`);
+    });
+
+    it('[에러케이스] 권한 없이 해당 알람 권한 수정', async () => {
+      await test.deleteAuths();
+      await test.insertAuths(undefined, [AuthsEnum.CAN_USE_OFFICE]);
+
+      const response = await test.req("patch", `/auths/menus`, {}, await test.getToken());
 
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(ExceptionMessages.NO_PERMISSION);
