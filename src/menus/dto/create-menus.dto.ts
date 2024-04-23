@@ -9,7 +9,7 @@ export class CreateMenusDto extends PickType(MenusEntity, [
   'name',
   'order',
   'link',
-  'icon'
+  'icon',
 ]) {
 
   @IsNumber()

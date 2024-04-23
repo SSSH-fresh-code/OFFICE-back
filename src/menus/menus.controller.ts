@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { MenusService } from './menus.service';
 import { ApiBearerAuth, ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorator/roles.decorator';
@@ -10,7 +10,6 @@ import { UpdateMenusDto } from './dto/update-menus.dto';
 
 @ApiTags('menus')
 @Controller('menus')
-@Roles([AuthsEnum.CAN_USE_MENU])
 @ApiBearerAuth('access')
 export class MenusController {
   constructor(private readonly menusService: MenusService) { }
@@ -20,16 +19,19 @@ export class MenusController {
     return await this.menusService.getMenusByAuths(user);
   }
 
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Get('all')
   async getAllParentMenus() {
     return await this.menusService.getAllParentMenus();
   }
 
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Get('/:id')
   async getParentMenus(@Param('id', ParseIntPipe) id: number) {
     return await this.menusService.getParentMenus(id);
   }
 
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Post('')
   @ApiBody({
     schema: {
@@ -46,6 +48,7 @@ export class MenusController {
     return this.menusService.createMenus(dto);
   }
 
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Patch('')
   @ApiBody({
     schema: {
@@ -63,8 +66,9 @@ export class MenusController {
     return this.menusService.updateMenus(dto);
   }
 
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Delete(':id')
-  async deleteMenus(@Param('id', ParseIntPipe) id: number, @Query('all', ParseBoolPipe) all: boolean) {
+  async deleteMenus(@Param('id', ParseIntPipe) id: number, @Query('all', new DefaultValuePipe(false), ParseBoolPipe) all: boolean) {
     return this.menusService.deleteMenus(id, all);
   }
 }
