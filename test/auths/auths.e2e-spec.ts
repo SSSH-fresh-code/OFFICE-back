@@ -39,9 +39,7 @@ describe('AuthsController (e2e)', () => {
 
   afterEach(async () => {
     await test.deleteAuths();
-    for (const u of test.users) {
-      await test.repository.query(`delete from auths where code like 'TEST%';`);
-    }
+    await test.repository.query(`delete from auths where code like 'TEST%';`);
     console.log("time(s) : ", (new Date().getTime() - date.getTime()) / 1000);
   });
 
