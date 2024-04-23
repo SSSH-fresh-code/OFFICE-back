@@ -46,6 +46,16 @@ export class AuthsController {
     return await this.authsService.updateAuthAlarm(updateAuthAlarmsDto);
   }
 
+  @Get('menus/:id')
+  async getAuthsByMenus(@Param('id', ParseIntPipe) id: number) {
+    return await this.authsService.getAuthsByMenu(id);
+  }
+
+  @Patch('menus')
+  async patchAlarmsMenus(@Body() updateAuthAlarmsDto: UpdateAuthAlarmsDto) {
+    return await this.authsService.updateAuthMenu(updateAuthAlarmsDto);
+  }
+
   @Post()
   async postAuths(@Body() dto: CreateAuthDto) {
     return await this.authsService.postAuths(dto);

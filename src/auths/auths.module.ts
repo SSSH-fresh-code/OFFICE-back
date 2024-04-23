@@ -7,6 +7,7 @@ import { AuthsController } from './auths.controller';
 import { authsProviders } from 'src/config/database/auths.providers';
 import { usersProviders } from 'src/config/database/users.providers';
 import { CommonModule } from 'src/common/common.module';
+import { menusProviders } from 'src/config/database/menus.providers';
 
 @Module({
   imports: [CommonModule, DatabaseModule, JwtModule.registerAsync({
@@ -21,7 +22,8 @@ import { CommonModule } from 'src/common/common.module';
   providers: [
     AuthsService,
     ...authsProviders,
-    ...usersProviders
+    ...usersProviders,
+    ...menusProviders
   ]
 })
 export class AuthsModule { }

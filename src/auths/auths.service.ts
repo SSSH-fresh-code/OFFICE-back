@@ -14,6 +14,8 @@ import { CommonService } from 'src/common/common.service';
 import { AlarmsEntity } from 'src/alarms/entities/alarms.entity';
 import { UpdateAuthUserDto } from 'src/auths/dto/update-auth-user.dto';
 import { UpdateAuthAlarmsDto } from './dto/update-auth-alarms.dto';
+import { MenusEntity } from 'src/menus/entities/menus.entity';
+import { UpdateAuthMenusDto } from './dto/update-auth-menus.dto';
 
 @Injectable()
 export class AuthsService {
@@ -25,6 +27,8 @@ export class AuthsService {
     private readonly usersRepository: Repository<UserEntity>,
     @Inject('ALARMS_REPOSITORY')
     private readonly alarmsRepository: Repository<AlarmsEntity>,
+    @Inject('MENUS_REPOSITORY')
+    private readonly menusRepository: Repository<MenusEntity>,
     private readonly commonService: CommonService,
   ) { }
 
@@ -171,6 +175,8 @@ export class AuthsService {
     return await this.authsRepository.find({ order: { description: 'ASC' } });
   }
 
+
+  // TODO : 추후에 추상화해서 공통 로직으로 빼보자
   async getAuthsByUser(id: string) {
     const { auths } = await this.usersRepository.findOne({
       select: ["id"],
@@ -183,6 +189,16 @@ export class AuthsService {
 
   async getAuthsByAlarm(id: number) {
     const { auths } = await this.alarmsRepository.findOne({
+      select: ["id"],
+      where: { id },
+      loadRelationIds: { relations: ["auths"] }
+    });
+
+    return auths;
+  }
+
+  async getAuthsByMenu(id: number) {
+    const { auths } = await this.menusRepository.findOne({
       select: ["id"],
       where: { id },
       loadRelationIds: { relations: ["auths"] }
@@ -231,6 +247,21 @@ export class AuthsService {
 
     return await this.alarmsRepository.save({
       ...alarm,
+      auths: dto.auths.map((a) => ({ code: a }))
+    });
+  }
+
+  async updateAuthMenu(dto: UpdateAuthMenusDto) {
+    const menus = await this.menusRepository.findOne({
+      where: {
+        id: dto.id
+      }
+    });
+
+    if (!menus) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID)
+
+    return await this.menusRepository.save({
+      ...menus,
       auths: dto.auths.map((a) => ({ code: a }))
     });
   }

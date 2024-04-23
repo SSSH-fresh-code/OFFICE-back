@@ -36,7 +36,6 @@ export class AuthsGuard implements CanActivate {
       context.getClass(),
     ]);
 
-
     if (!requireAuths) return true;
 
     const req = context.switchToHttp().getRequest();
