@@ -20,6 +20,12 @@ export class MenusController {
   }
 
   @Roles([AuthsEnum.CAN_USE_MENU])
+  @Get('')
+  async getAllMenus() {
+    return await this.menusService.getAllMenus();
+  }
+
+  @Roles([AuthsEnum.CAN_USE_MENU])
   @Get('all')
   async getAllParentMenus() {
     return await this.menusService.getAllParentMenus();

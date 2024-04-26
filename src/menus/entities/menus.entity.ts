@@ -14,8 +14,8 @@ export class MenusEntity extends BaseEntity implements IMenu {
   @Column({ type: "varchar", length: "30", nullable: false, unique: true })
   name: string;
 
-  @Column({ type: "varchar", length: "30", nullable: true })
-  icon?: string;
+  @Column({ type: "smallint", nullable: true })
+  icon?: number;
 
   @Column({ type: "varchar", length: "100", nullable: true })
   link?: string;

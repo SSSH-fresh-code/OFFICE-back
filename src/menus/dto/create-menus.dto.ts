@@ -28,9 +28,9 @@ export class CreateMenusDto extends PickType(MenusEntity, [
 
   @IsOptional()
   @ApiProperty({
-    example: "USER"
+    example: 0
   })
-  icon?: string;
+  icon?: number;
 
 
   @IsOptional()

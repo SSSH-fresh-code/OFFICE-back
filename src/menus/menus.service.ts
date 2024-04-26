@@ -5,6 +5,7 @@ import { MenusEntity } from './entities/menus.entity';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UpdateMenusDto } from './dto/update-menus.dto';
+import { identity } from 'rxjs';
 
 @Injectable()
 export class MenusService {
@@ -14,22 +15,9 @@ export class MenusService {
   ) { }
 
   async getAllParentMenus() {
-    const menus = await this.menusRepository.find({
-      select: {
-        name: true,
-        childMenus: {}
-      },
-      where: {
-        parentMenus: IsNull()
-      },
-      relations: {
-        childMenus: {
-          parentMenus: true
-        }
-      }
-    });
+    const menus = await this.getAllMenus();
 
-    return menus.map(m => m.name);
+    return menus.map(m => ({ id: m.id, name: m.name, icon: m.icon }));
   }
 
   async getParentMenus(id: number) {
@@ -174,5 +162,31 @@ export class MenusService {
     const deleteMenus = await this.menusRepository.delete({ id: menus.id });
 
     return { ...deleteMenus, affected: deleteMenus.affected + affected }
+  }
+
+  async getAllMenus() {
+    return await this.menusRepository.find({
+      select: {
+        id: true,
+        name: true,
+        icon: true,
+        order: true,
+        childMenus: {
+          id: true,
+          order: true,
+          name: true,
+          link: true,
+          parentMenus: {}
+        }
+      },
+      where: {
+        parentMenus: IsNull()
+      },
+      relations: {
+        childMenus: {
+          parentMenus: true
+        }
+      }
+    });
   }
 }
