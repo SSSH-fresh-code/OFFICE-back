@@ -7,6 +7,7 @@ import { CreateMenusDto } from './dto/create-menus.dto';
 import { User } from 'src/common/decorator/user.decorator';
 import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UpdateMenusDto } from './dto/update-menus.dto';
+import { MenuPaginationDto } from './dto/menu-pagination.dto';
 
 @ApiTags('menus')
 @Controller('menus')
@@ -21,8 +22,8 @@ export class MenusController {
 
   @Roles([AuthsEnum.CAN_USE_MENU])
   @Get('')
-  async getAllMenus() {
-    return await this.menusService.getAllMenus();
+  async getAllMenus(@Query() query: MenuPaginationDto) {
+    return await this.menusService.findMenus(query);
   }
 
   @Roles([AuthsEnum.CAN_USE_MENU])

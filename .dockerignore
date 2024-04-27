@@ -4,7 +4,6 @@
 node_modules
 documents
 postgres-data
-.env.local
 .env.sample
 .gitignore
 README.md

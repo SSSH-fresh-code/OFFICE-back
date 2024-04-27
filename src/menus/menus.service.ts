@@ -5,19 +5,21 @@ import { MenusEntity } from './entities/menus.entity';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UpdateMenusDto } from './dto/update-menus.dto';
-import { identity } from 'rxjs';
+import { MenuPaginationDto } from './dto/menu-pagination.dto';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class MenusService {
   constructor(
     @Inject('MENUS_REPOSITORY')
-    private readonly menusRepository: Repository<MenusEntity>
+    private readonly menusRepository: Repository<MenusEntity>,
+    private readonly commonService: CommonService
   ) { }
 
   async getAllParentMenus() {
     const menus = await this.getAllMenus();
 
-    return menus.map(m => ({ id: m.id, name: m.name, icon: m.icon }));
+    return menus.map(m => ({ id: m.id, name: m.name, icon: m.icon, order: m.order }));
   }
 
   async getParentMenus(id: number) {
@@ -128,7 +130,7 @@ export class MenusService {
 
     } else {
       // 부모 메뉴는 link가 없어야 하며, icon이 있어야함
-      if (dto.link || !dto.icon)
+      if (dto.link || dto.icon === undefined || dto.icon === null)
         throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
     }
   }
@@ -186,7 +188,17 @@ export class MenusService {
         childMenus: {
           parentMenus: true
         }
+      },
+      order: {
+        order: 'ASC',
+        childMenus: {
+          order: 'ASC'
+        }
       }
     });
+  }
+
+  async findMenus(page: MenuPaginationDto) {
+    return this.commonService.paginate<MenusEntity>(page, this.menusRepository);
   }
 }

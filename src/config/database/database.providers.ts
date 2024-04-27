@@ -1,19 +1,21 @@
-import { registerAs } from "@nestjs/config";
-import { readFileSync } from "fs";
-import { DataSource, DataSourceOptions } from "typeorm";
+import { registerAs } from '@nestjs/config';
+import { readFileSync } from 'fs';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 function getTypeOrmConfig(): DataSourceOptions {
-  const isProduction = process.env.NEST_MODE === "production";
+  const isProduction = process.env.NEST_MODE === 'production';
 
-  const isProductionOption = isProduction ? {
-    ssl: {
-      ca: readFileSync('./dist/global-bundle.pem'),
-    },
-    extra: {
-      ssl: { rejectUnauthorized: false }
-    },
-    synchronize: true,
-  } : {}
+  const isProductionOption = isProduction
+    ? {
+        ssl: {
+          ca: readFileSync('./dist/global-bundle.pem'),
+        },
+        extra: {
+          ssl: { rejectUnauthorized: false },
+        },
+        synchronize: true,
+      }
+    : {};
 
   const option: DataSourceOptions = {
     type: 'postgres',
@@ -22,12 +24,10 @@ function getTypeOrmConfig(): DataSourceOptions {
     username: process.env.DB_USER_NAME,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
-    entities: [
-      __dirname + '/../../**/*.entity{.ts,.js}',
-    ],
+    entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
     synchronize: false,
-    ...isProductionOption
-  }
+    ...isProductionOption,
+  };
 
   return option;
 }
@@ -44,3 +44,4 @@ export const databaseProviders = [
 
 export default registerAs('typeorm', () => getTypeOrmConfig());
 export const connectionSource = new DataSource(getTypeOrmConfig() as DataSourceOptions);
+
