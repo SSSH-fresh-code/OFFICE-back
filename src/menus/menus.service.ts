@@ -1,25 +1,26 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateMenusDto } from './dto/create-menus.dto';
-import { Equal, IsNull, Or, Repository } from 'typeorm';
+import { Equal, FindOptionsWhere, IsNull, Or, Repository } from 'typeorm';
 import { MenusEntity } from './entities/menus.entity';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 import { UpdateMenusDto } from './dto/update-menus.dto';
 import { MenuPaginationDto } from './dto/menu-pagination.dto';
 import { CommonService } from 'src/common/common.service';
+import AuthsEnum from 'src/auths/const/auths.enums';
 
 @Injectable()
 export class MenusService {
   constructor(
     @Inject('MENUS_REPOSITORY')
     private readonly menusRepository: Repository<MenusEntity>,
-    private readonly commonService: CommonService
-  ) { }
+    private readonly commonService: CommonService,
+  ) {}
 
   async getAllParentMenus() {
     const menus = await this.getAllMenus();
 
-    return menus.map(m => ({ id: m.id, name: m.name, icon: m.icon, order: m.order }));
+    return menus.map((m) => ({ id: m.id, name: m.name, icon: m.icon, order: m.order }));
   }
 
   async getParentMenus(id: number) {
@@ -34,28 +35,40 @@ export class MenusService {
           order: true,
           name: true,
           link: true,
-          parentMenus: {}
-        }
+          parentMenus: {},
+        },
       },
       where: {
         id: id,
-        parentMenus: IsNull()
+        parentMenus: IsNull(),
       },
       relations: {
         childMenus: {
-          parentMenus: true
-        }
+          parentMenus: true,
+        },
       },
       order: {
         order: 'ASC',
         childMenus: {
-          order: 'ASC'
-        }
-      }
+          order: 'ASC',
+        },
+      },
     });
   }
 
   async getMenusByAuths(user: TTokenPayload) {
+    let where: FindOptionsWhere<MenusEntity> = {
+      childMenus: {
+        auths: { code: Or(...user.auths.map((a) => Equal(a))) },
+      },
+    };
+
+    if (user.auths.includes(AuthsEnum.SUPER_USER)) {
+      where = {
+        parentMenus: IsNull(),
+      };
+    }
+
     return await this.menusRepository.find({
       select: {
         name: true,
@@ -63,25 +76,21 @@ export class MenusService {
         childMenus: {
           name: true,
           link: true,
-          parentMenus: {}
-        }
+          parentMenus: {},
+        },
       },
-      where: {
-        childMenus: {
-          auths: { code: Or(...user.auths.map(a => Equal(a))) }
-        }
-      },
+      where,
       relations: {
         childMenus: {
-          parentMenus: true
-        }
+          parentMenus: true,
+        },
       },
       order: {
         order: 'ASC',
         childMenus: {
-          order: 'ASC'
-        }
-      }
+          order: 'ASC',
+        },
+      },
     });
   }
 
@@ -95,7 +104,7 @@ export class MenusService {
   }
 
   async updateMenus(dto: UpdateMenusDto) {
-    const oriMenu = await this.menusRepository.findOne({ where: { id: dto.id } })
+    const oriMenu = await this.menusRepository.findOne({ where: { id: dto.id } });
 
     const cm = dto.childMenus;
 
@@ -105,17 +114,17 @@ export class MenusService {
 
         await this.menusRepository.save({
           ...oriChildMenu,
-          ...cm[i]
+          ...cm[i],
         });
       }
     }
 
     const update = {
       ...oriMenu,
-      ...dto
+      ...dto,
     };
 
-    delete update["childMenus"]
+    delete update['childMenus'];
 
     this.isParentMenu(update);
 
@@ -124,10 +133,8 @@ export class MenusService {
 
   private isParentMenu(dto: CreateMenusDto | UpdateMenusDto) {
     if (dto.parentId) {
-      // 자식 메뉴는 link가 있어야 하며, icon은 없어야 함 
-      if (!dto.link || dto.icon)
-        throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
-
+      // 자식 메뉴는 link가 있어야 하며, icon은 없어야 함
+      if (!dto.link || dto.icon) throw new BadRequestException(ExceptionMessages.NO_PARAMETER);
     } else {
       // 부모 메뉴는 link가 없어야 하며, icon이 있어야함
       if (dto.link || dto.icon === undefined || dto.icon === null)
@@ -139,8 +146,8 @@ export class MenusService {
     const menus = await this.menusRepository.findOne({
       where: { id },
       relations: {
-        childMenus: true
-      }
+        childMenus: true,
+      },
     });
 
     if (!menus) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
@@ -151,11 +158,11 @@ export class MenusService {
 
     if (childMenus.length > 0) {
       if (!all) {
-        throw new BadRequestException(ExceptionMessages.HAS_CHILD_MENUS)
+        throw new BadRequestException(ExceptionMessages.HAS_CHILD_MENUS);
       }
 
       const deleteChildMenus = await this.menusRepository.delete({
-        id: Or(...childMenus.map(c => Equal(c.id)))
+        id: Or(...childMenus.map((c) => Equal(c.id))),
       });
 
       affected = deleteChildMenus.affected;
@@ -163,7 +170,7 @@ export class MenusService {
 
     const deleteMenus = await this.menusRepository.delete({ id: menus.id });
 
-    return { ...deleteMenus, affected: deleteMenus.affected + affected }
+    return { ...deleteMenus, affected: deleteMenus.affected + affected };
   }
 
   async getAllMenus() {
@@ -178,23 +185,23 @@ export class MenusService {
           order: true,
           name: true,
           link: true,
-          parentMenus: {}
-        }
+          parentMenus: {},
+        },
       },
       where: {
-        parentMenus: IsNull()
+        parentMenus: IsNull(),
       },
       relations: {
         childMenus: {
-          parentMenus: true
-        }
+          parentMenus: true,
+        },
       },
       order: {
         order: 'ASC',
         childMenus: {
-          order: 'ASC'
-        }
-      }
+          order: 'ASC',
+        },
+      },
     });
   }
 
