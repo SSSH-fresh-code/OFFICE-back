@@ -14,6 +14,7 @@ export enum ExceptionMessages {
   NOT_EXIST_ACCOUNT_INFO = "사용자 정보가 존재하지 않습니다.",
   NOT_EXIST_ID = "존재하지 않는 아이디입니다.",
   NOT_EXIST_USER = "존재하지 않는 유저입니다.",
+  NOT_EXIST_NAME = "존재하지 않는 이름입니다.",
   NOT_EXIST_CODE = "존재하지 않는 코드입니다.",
   NOT_EXIST_USER_PROPERTY_IN_REQUEST = "Request에 user 프로퍼티가 존재하지 않습니다.",
   NOT_EXIST_WORK = "출근 기록이 없습니다. 출근 후 퇴근해주세요.",
