@@ -1,13 +1,10 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { CreateMenusDto, CreateTopicsDto } from './dto/create-topics.dto';
-import { Equal, FindOptionsWhere, IsNull, Or, Repository } from 'typeorm';
-import { MenusEntity, TopicsEntity } from './entities/topics.entity';
+import { CreateTopicsDto } from './dto/create-topics.dto';
+import { Repository } from 'typeorm';
+import { TopicsEntity } from './entities/topics.entity';
 import { ExceptionMessages } from 'src/common/message/exception.message';
-import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
-import { UpdateMenusDto } from './dto/update-topics.dto';
-import { MenuPaginationDto, TopicsPaginationDto } from './dto/topics-pagination.dto';
+import { TopicsPaginationDto } from './dto/topics-pagination.dto';
 import { CommonService } from 'src/common/common.service';
-import AuthsEnum from 'src/auths/const/auths.enums';
 
 @Injectable()
 export class TopicsService {
