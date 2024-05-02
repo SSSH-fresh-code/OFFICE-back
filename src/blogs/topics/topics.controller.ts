@@ -9,7 +9,6 @@ import { CreateTopicsDto } from './dto/create-topics.dto';
 @ApiTags('topics')
 @Controller('topics')
 @ApiBearerAuth('access')
-@Roles([AuthsEnum.ADMIN_ALARMS])
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) { }
 
