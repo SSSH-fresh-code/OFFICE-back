@@ -5,7 +5,6 @@ import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CommonService } from 'src/common/common.service';
 import { PostsPaginationDto } from './dto/posts-pagination.dto';
 import { CreatePostsDto } from './dto/create-posts.dto';
-import AuthsEnum from 'src/auths/const/auths.enums';
 import { UpdatePostsDto } from './dto/update-posts.dto';
 
 @Injectable()
