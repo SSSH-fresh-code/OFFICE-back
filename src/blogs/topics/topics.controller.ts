@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import AuthsEnum from 'src/auths/const/auths.enums';
@@ -28,10 +28,10 @@ export class TopicsController {
     return this.topicsService.createTopic(topic);
   }
 
-  @Delete('/:name')
+  @Delete('/:id')
   @Roles([AuthsEnum.CAN_USE_BLOG])
-  async deleteTopic(@Param('name') name: string) {
-    return this.topicsService.deleteTopic(name);
+  async deleteTopic(@Param('id', ParseIntPipe) id: number) {
+    return this.topicsService.deleteTopic(id);
   }
 
 }

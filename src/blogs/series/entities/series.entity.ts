@@ -4,7 +4,7 @@ import { TopicsEntity } from 'src/blogs/topics/entities/topics.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('topics')
+@Entity('series')
 export class SeriesEntity extends BaseEntity implements ISeries {
   @PrimaryGeneratedColumn('increment')
   id: number;
