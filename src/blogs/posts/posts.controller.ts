@@ -6,6 +6,8 @@ import { PostsService } from './posts.service';
 import { PostsPaginationDto } from './dto/posts-pagination.dto';
 import { CreatePostsDto } from './dto/create-posts.dto';
 import { UpdatePostsDto } from './dto/update-posts.dto';
+import { User } from 'src/common/decorator/user.decorator';
+import { TTokenPayload } from '@sssh-fresh-code/types-sssh';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -25,8 +27,8 @@ export class PostsController {
 
   @Post('')
   @Roles([AuthsEnum.CAN_USE_BLOG])
-  async createPost(@Body('') post: CreatePostsDto) {
-    return this.postsService.createPosts(post);
+  async createPost(@Body('') post: CreatePostsDto, @User() user: TTokenPayload) {
+    return this.postsService.createPosts(post, user);
   }
 
   @Patch('')

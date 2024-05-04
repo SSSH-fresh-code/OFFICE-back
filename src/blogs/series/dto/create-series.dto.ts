@@ -16,5 +16,5 @@ export class CreateSeriesDto extends PickType(SeriesEntity, [
   name: string;
 
   @IsNumber()
-  topicId: string;
+  topicId: number;
 }

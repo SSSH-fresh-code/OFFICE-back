@@ -5,7 +5,7 @@ import { UserEntity } from "src/users/entities/user.entity";
 import { Repository } from "typeorm";
 
 export default class E2ETestUtil<T> {
-  private app: INestApplication;
+  protected app: INestApplication;
   public repository: Repository<T>;
 
   public users: UserEntity[] = [];

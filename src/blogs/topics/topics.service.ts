@@ -15,15 +15,15 @@ export class TopicsService {
   ) { }
 
   async getTopic(name: string) {
-    const menu = await this.topicsRepository.createQueryBuilder("topics")
+    const topic = await this.topicsRepository.createQueryBuilder("topics")
       .loadRelationCountAndMap('topics.seriesCnt', 'topics.series', 'series')
       .loadRelationCountAndMap('topics.postsCnt', 'topics.posts', 'posts')
       .where("topics.name = :name", { name })
       .getOne();
 
-    if (!menu) throw new NotFoundException(ExceptionMessages.NOT_EXIST_NAME);
+    if (!topic) throw new NotFoundException(ExceptionMessages.NOT_EXIST_NAME);
 
-    return menu;
+    return topic;
   }
 
   async getTopics(page: TopicsPaginationDto) {

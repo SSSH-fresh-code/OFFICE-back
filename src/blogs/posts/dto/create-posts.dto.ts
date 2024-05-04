@@ -22,7 +22,4 @@ export class CreatePostsDto {
 
   @IsOptional()
   seriesId?: number;
-
-  @IsUUID()
-  authorId: string;
 }

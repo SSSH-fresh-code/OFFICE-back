@@ -1,25 +1,14 @@
-import { Length } from 'class-validator';
 import { Test } from "@nestjs/testing";
 import { AppModule } from "src/app.module";
-import E2ETestUtil from "../e2e-util.class";
 import AuthsEnum from "src/auths/const/auths.enums";
 import { TopicsEntity } from "src/blogs/topics/entities/topics.entity";
 import { ExceptionMessages } from "src/common/message/exception.message";
 import { CreateTopicsDto } from 'src/blogs/topics/dto/create-topics.dto';
+import BlogE2ETestUtil from "../blog-e2e-util.class";
 
 describe('TopicsController (e2e)', () => {
-  let test: E2ETestUtil<TopicsEntity>;
+  let test: BlogE2ETestUtil<TopicsEntity>;
   let date: Date;
-  const topicName = 'TESTTopic';
-  const seriseName = 'TESTSeries';
-  const postName = 'TESTPost';
-
-  const insertQuery = (name: string = topicName) => `INSERT INTO topics ("name") values ('${name}');`;
-  const selectQuery = (name: string = topicName) => `SELECT * FROM topics WHERE "name" = '${name}'`
-  const insertQuery2 = (name: string = seriseName, id: string | number) => `INSERT INTO series ("name", "topicId") values ('${name}', '${id}');`;
-  const selectQuery2 = (name: string = seriseName) => `SELECT * FROM series WHERE "name" = '${name}'`
-  const insertQuery3 = (name: string = postName, id: string | number) => `INSERT INTO posts ("title", "contents", "topicId", "authorId") values ('${name}', 'TESTCONTENTS', '${id}', '${test.users[0].id}');`;
-  const selectQuery3 = (name: string = postName) => `SELECT * FROM series WHERE "name" = '${name}'`
 
   beforeAll((done) => {
     Test.createTestingModule({
@@ -31,7 +20,7 @@ describe('TopicsController (e2e)', () => {
         const app = moduleFixture.createNestApplication();
         await app.init();
 
-        test = new E2ETestUtil(app, moduleFixture.get("TOPICS_REPOSITORY"));
+        test = new BlogE2ETestUtil(app, moduleFixture.get("TOPICS_REPOSITORY"));
         await test.setBaseUser();
 
       })
@@ -47,28 +36,26 @@ describe('TopicsController (e2e)', () => {
 
   afterEach(async () => {
     await test.deleteAuths();
-    await test.repository.query(`delete from posts where "title" like 'TEST%'`);
-    await test.repository.query(`delete from series where "name" like 'TEST%'`);
-    await test.repository.query(`delete from topics where "name" like 'TEST%'`);
+    await test.deleteBlogDatas();
     console.log("time(s) : ", (new Date().getTime() - date.getTime()) / 1000);
   });
 
   describe('/topics/:name (GET)', () => {
     it('토픽 조회', async () => {
-      await test.repository.query(insertQuery());
-      const [{ id }] = await test.repository.query(selectQuery());
-      await test.repository.query(insertQuery2(undefined, id));
-      await test.repository.query(insertQuery3(undefined, id));
+      await test.repository.query(test.topicInsertQuery());
+      const [{ id }] = await test.repository.query(test.topicSelectQuery());
+      await test.repository.query(test.seriesInsertQuery(id));
+      await test.repository.query(test.postInsertQuery(id));
 
       const response = await test.req(
         "get",
-        `/topics/${topicName}`,
+        `/topics/${test.topicName}`,
         undefined,
         undefined
       );
 
       expect(response.status).toBe(200);
-      expect(response.body.name).toBe(topicName);
+      expect(response.body.name).toBe(test.topicName);
       expect(response.body.seriesCnt).toBe(1);
       expect(response.body.postsCnt).toBe(1);
     });
@@ -88,14 +75,14 @@ describe('TopicsController (e2e)', () => {
 
   describe('/topic (GET)', () => {
     it('토픽 리스트 조회', async () => {
-      await test.repository.query(insertQuery());
-      await test.repository.query(insertQuery("TESTTopic2"));
-      const [testTopic] = await test.repository.query(selectQuery());
-      const [testTopic2] = await test.repository.query(selectQuery("TESTTopic2"));
-      await test.repository.query(insertQuery2(undefined, testTopic.id));
-      await test.repository.query(insertQuery3(undefined, testTopic.id));
-      await test.repository.query(insertQuery2("TESTSeries2", testTopic2.id));
-      await test.repository.query(insertQuery3("TESTPost2", testTopic2.id));
+      await test.repository.query(test.topicInsertQuery());
+      await test.repository.query(test.topicInsertQuery("TESTTopic2"));
+      const [testTopic] = await test.repository.query(test.topicSelectQuery());
+      const [testTopic2] = await test.repository.query(test.topicSelectQuery("TESTTopic2"));
+      await test.repository.query(test.seriesInsertQuery(testTopic.id));
+      await test.repository.query(test.postInsertQuery(testTopic.id));
+      await test.repository.query(test.seriesInsertQuery(testTopic2.id, "TESTSeries2"));
+      await test.repository.query(test.postInsertQuery(testTopic2.id, "TESTPost2"));
 
       const response = await test.req("get", "/topics?page=1", undefined, await test.getToken())
 
@@ -118,7 +105,7 @@ describe('TopicsController (e2e)', () => {
     });
 
     it('[에러케이스] 중복 생성', async () => {
-      await test.repository.query(insertQuery());
+      await test.repository.query(test.topicInsertQuery());
       const topicDto: CreateTopicsDto = {
         name: "TESTTopic"
       }
@@ -142,8 +129,8 @@ describe('TopicsController (e2e)', () => {
 
   describe('/topics/:id (DELETE)', () => {
     it('토픽 삭제', async () => {
-      await test.repository.query(insertQuery());
-      const [{ id }] = await test.repository.query(selectQuery());
+      await test.repository.query(test.topicInsertQuery());
+      const [{ id }] = await test.repository.query(test.topicSelectQuery());
 
       const response = await test.req("delete", `/topics/${id}`, undefined, await test.getToken())
 

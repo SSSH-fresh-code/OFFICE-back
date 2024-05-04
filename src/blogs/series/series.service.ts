@@ -1,5 +1,5 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { QueryFailedError, Repository } from 'typeorm';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CommonService } from 'src/common/common.service';
 import { SeriesEntity } from './entities/series.entity';
@@ -15,9 +15,13 @@ export class SeriesService {
   ) { }
 
   async getSeries(id: number) {
-    const series = await this.seriesRepository.findOne({ where: { id } });
+    const series = await this.seriesRepository.createQueryBuilder("series")
+      .loadRelationCountAndMap('series.postsCnt', 'series.posts', 'posts')
+      .where("series.id = :id", { id })
+      .getOne();
 
-    /** TODO: series, post 가져오기 */
+    if (!series) throw new NotFoundException(ExceptionMessages.NOT_EXIST_ID);
+
     return series;
   }
 
@@ -26,15 +30,26 @@ export class SeriesService {
   }
 
   async createSeries(dto: CreateSeriesDto) {
-    const topic = await this.seriesRepository.create(dto);
+    const seriesDto = await this.seriesRepository.create(dto);
 
-    return await this.seriesRepository.save(topic);
+    try {
+      const series = await this.seriesRepository.save(seriesDto);
+      return series;
+    } catch (e: any) {
+      if (e instanceof QueryFailedError) {
+        if (e.driverError.code === "23505") {
+          throw new BadRequestException(ExceptionMessages.EXIST_NAME);
+        }
+      }
+    }
+
+    throw new InternalServerErrorException(ExceptionMessages.INTERNAL_SERVER_ERROR);
   }
 
   async deleteSeries(id: number) {
     const series = await this.seriesRepository.findOne({ where: { id } });
 
-    if (!series) throw new BadRequestException(ExceptionMessages.NOT_EXIST_ID);
+    if (!series) throw new NotFoundException(ExceptionMessages.NOT_EXIST_ID);
 
     const del = await this.seriesRepository.delete(series.id);
 
