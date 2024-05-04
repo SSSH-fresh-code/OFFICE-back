@@ -27,15 +27,21 @@ export class TopicsService {
   }
 
   async getTopics(page: TopicsPaginationDto) {
-    return await this.commonService.paginate<TopicsEntity>(page, this.topicsRepository);
+    return await this.commonService.paginate<TopicsEntity>(page, this.topicsRepository, {
+      select: {
+        id: true,
+        name: true,
+        createdAt: true
+      }
+    });
   }
 
   async createTopic(dto: CreateTopicsDto) {
     const topicDto = await this.topicsRepository.create(dto);
 
     try {
-      const topic = await this.topicsRepository.save(topicDto);
-      return topic;
+      const { name } = await this.topicsRepository.save(topicDto);
+      return { name };
     } catch (e: any) {
       if (e instanceof QueryFailedError) {
         if (e.driverError.code === "23505") {

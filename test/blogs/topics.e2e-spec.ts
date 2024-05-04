@@ -96,12 +96,12 @@ describe('TopicsController (e2e)', () => {
   describe('/topics (POST)', () => {
     it('토픽 생성', async () => {
       const topicDto: CreateTopicsDto = {
-        name: "TESTTopic"
+        name: test.topicName
       }
       const response = await test.req("post", "/topics", topicDto, await test.getToken())
 
       expect(response.status).toBe(201);
-      expect(response.body.name).toBe(topicDto.name);
+      expect(response.body.name).toBe(test.topicName);
     });
 
     it('[에러케이스] 중복 생성', async () => {

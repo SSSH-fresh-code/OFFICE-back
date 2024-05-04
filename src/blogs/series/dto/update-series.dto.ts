@@ -12,7 +12,4 @@ export class UpdateSeriesDto extends PartialType(CreateSeriesDto) {
     example: "자바 알아보기"
   })
   name: string;
-
-  @IsNumber()
-  topicId: string;
 }

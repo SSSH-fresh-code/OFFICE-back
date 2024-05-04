@@ -17,6 +17,7 @@ export class SeriesService {
   async getSeries(id: number) {
     const series = await this.seriesRepository.createQueryBuilder("series")
       .loadRelationCountAndMap('series.postsCnt', 'series.posts', 'posts')
+      .leftJoinAndSelect('series.topic', 'topic')
       .where("series.id = :id", { id })
       .getOne();
 
@@ -26,15 +27,27 @@ export class SeriesService {
   }
 
   async getSeriesList(page: seriesPaginationDto) {
-    return await this.commonService.paginate<SeriesEntity>(page, this.seriesRepository);
+    return await this.commonService.paginate<SeriesEntity>(page, this.seriesRepository, {
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        topic: {
+          name: true
+        }
+      },
+      relations: {
+        topic: true
+      }
+    });
   }
 
   async createSeries(dto: CreateSeriesDto) {
     const seriesDto = await this.seriesRepository.create(dto);
 
     try {
-      const series = await this.seriesRepository.save(seriesDto);
-      return series;
+      const { id } = await this.seriesRepository.save(seriesDto);
+      return { id };
     } catch (e: any) {
       if (e instanceof QueryFailedError) {
         if (e.driverError.code === "23505") {

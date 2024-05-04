@@ -55,6 +55,7 @@ describe('SeriesController (e2e)', () => {
         undefined
       );
 
+
       expect(response.status).toBe(200);
       expect(response.body.name).toBe(name);
       expect(response.body.postsCnt).toBe(1);
@@ -103,7 +104,7 @@ describe('SeriesController (e2e)', () => {
       const response = await test.req("post", "/series", seriesDto, await test.getToken())
 
       expect(response.status).toBe(201);
-      expect(response.body.name).toBe(seriesDto.name);
+      expect(response.body.id).toBeDefined();
     });
 
     it('[에러케이스] 중복 생성', async () => {

@@ -1,10 +1,8 @@
-import { MenusService } from './../../src/menus/menus.service';
 import { Test } from "@nestjs/testing";
 import { AppModule } from "src/app.module";
 import AuthsEnum from "src/auths/const/auths.enums";
 import { ExceptionMessages } from "src/common/message/exception.message";
 import BlogE2ETestUtil from '../blog-e2e-util.class';
-import { CreateSeriesDto } from "src/blogs/series/dto/create-series.dto";
 import { PostsEntity } from "src/blogs/posts/entities/posts.entity";
 import { CreatePostsDto } from "src/blogs/posts/dto/create-posts.dto";
 import { UpdatePostsDto } from 'src/blogs/posts/dto/update-posts.dto';
@@ -90,6 +88,8 @@ describe('PostController (e2e)', () => {
       await test.repository.query(test.postInsertQuery(id, "TESTPOST"));
 
       const response = await test.req("get", "/posts?page=1", undefined, await test.getToken())
+
+      console.log(response.body.data[0]);
 
       expect(response.status).toBe(200);
       expect(response.body.info.total).toBeGreaterThanOrEqual(2);
