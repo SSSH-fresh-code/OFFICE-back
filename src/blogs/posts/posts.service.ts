@@ -47,7 +47,7 @@ export class PostsService {
 
     if (!post) throw new NotFoundException(ExceptionMessages.NOT_EXIST_POST)
 
-    return { ...post, title: post.title.replaceAll("_", " ") };
+    return post;
   }
 
   async getPosts(page: PostsPaginationDto) {
@@ -78,10 +78,9 @@ export class PostsService {
   }
 
   async createPosts(dto: CreatePostsDto, user: TTokenPayload) {
-    const title = dto.title.replaceAll(" ", "_");
     try {
       const post = await this.postsRepository.create({
-        title,
+        title: CommonService.replaceSpaceToUnderline(dto.title),
         contents: dto.contents,
         topic: { id: dto.topicId },
         series: { id: dto.seriesId },
@@ -100,8 +99,6 @@ export class PostsService {
   }
 
   async updatePosts(dto: UpdatePostsDto) {
-    const title = dto.title.replaceAll(" ", "_");
-
     const oriPost = await this.postsRepository.findOne({
       where: {
         id: dto.id
@@ -118,7 +115,7 @@ export class PostsService {
     try {
       const post = await this.postsRepository.create({
         id: dto.id,
-        title,
+        title: CommonService.replaceSpaceToUnderline(dto.title),
         contents: dto.contents,
         topic: { id: dto.topicId },
         series: { id: dto.seriesId },

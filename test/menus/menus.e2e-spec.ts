@@ -136,7 +136,7 @@ describe('MenusController (e2e)', () => {
 
   describe('/menus/:id (GET)', () => {
     it('메뉴 단일 조회', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
       const response = await test.req("get", `/menus/${id}`, undefined, await test.getToken())
@@ -299,7 +299,7 @@ describe('MenusController (e2e)', () => {
 
   describe('/alarms/:id (DELETE)', () => {
     it('부모 자식 메뉴 전체 삭제', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);

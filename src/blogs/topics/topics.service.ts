@@ -36,8 +36,17 @@ export class TopicsService {
     });
   }
 
+  async getTopicsForSelect() {
+    return await this.topicsRepository.find({
+      select: {
+        id: true,
+        name: true
+      }
+    })
+  }
+
   async createTopic(dto: CreateTopicsDto) {
-    const topicDto = await this.topicsRepository.create(dto);
+    const topicDto = await this.topicsRepository.create({ name: CommonService.replaceSpaceToUnderline(dto.name) });
 
     try {
       const { name } = await this.topicsRepository.save(topicDto);

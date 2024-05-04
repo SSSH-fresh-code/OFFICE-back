@@ -42,8 +42,19 @@ export class SeriesService {
     });
   }
 
+  async getSeriesListForSelect() {
+    return await this.seriesRepository.find({
+      select: {
+        id: true,
+        name: true
+      }
+    })
+  }
   async createSeries(dto: CreateSeriesDto) {
-    const seriesDto = await this.seriesRepository.create(dto);
+    const seriesDto = await this.seriesRepository.create({
+      ...dto,
+      topic: { id: dto.topicId }
+    });
 
     try {
       const { id } = await this.seriesRepository.save(seriesDto);

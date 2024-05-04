@@ -12,6 +12,11 @@ import { CreateTopicsDto } from './dto/create-topics.dto';
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) { }
 
+  @Get('/all')
+  async getTopicsForSelect() {
+    return this.topicsService.getTopicsForSelect();
+  }
+
   @Get('/:name')
   async getTopic(@Param('name') name: string) {
     return this.topicsService.getTopic(name);
@@ -21,6 +26,7 @@ export class TopicsController {
   async getTopics(@Query() query: TopicsPaginationDto) {
     return this.topicsService.getTopics(query);
   }
+
 
   @Post('')
   @Roles([AuthsEnum.CAN_USE_BLOG])

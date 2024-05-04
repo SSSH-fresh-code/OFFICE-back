@@ -61,7 +61,7 @@ describe('PostController (e2e)', () => {
       );
 
       expect(response.status).toBe(200);
-      expect(response.body.title).toBe(title);
+      expect(response.body.title).toBe(title.replaceAll(" ", "_"));
       expect(response.body.topic).toBeDefined();
       expect(response.body.author).toBeDefined();
     });

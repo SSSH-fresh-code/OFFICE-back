@@ -22,6 +22,11 @@ export class SeriesController {
     return this.seriesService.getSeriesList(query);
   }
 
+  @Get('/all')
+  async getSeriesListForSelect() {
+    return this.seriesService.getSeriesListForSelect();
+  }
+
   @Post('')
   @Roles([AuthsEnum.CAN_USE_BLOG])
   async createSeries(@Body('') series: CreateSeriesDto) {

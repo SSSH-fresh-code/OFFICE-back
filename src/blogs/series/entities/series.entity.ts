@@ -12,7 +12,7 @@ export class SeriesEntity extends BaseEntity implements ISeries {
   @Column({ type: "varchar", length: "100", nullable: false, unique: true })
   name: string;
 
-  @ManyToOne(() => TopicsEntity, (topic) => topic.id)
+  @ManyToOne(() => TopicsEntity, (topic) => topic.id, { nullable: false })
   @JoinColumn()
   topic: TopicsEntity
 
