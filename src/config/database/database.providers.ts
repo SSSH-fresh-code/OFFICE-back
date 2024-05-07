@@ -7,14 +7,14 @@ function getTypeOrmConfig(): DataSourceOptions {
 
   const isProductionOption = isProduction
     ? {
-        ssl: {
-          ca: readFileSync('./dist/global-bundle.pem'),
-        },
-        extra: {
-          ssl: { rejectUnauthorized: false },
-        },
-        synchronize: true,
-      }
+      ssl: {
+        ca: readFileSync('./dist/global-bundle.pem'),
+      },
+      extra: {
+        ssl: { rejectUnauthorized: false },
+      },
+      synchronize: true,
+    }
     : {};
 
   const option: DataSourceOptions = {
@@ -25,7 +25,7 @@ function getTypeOrmConfig(): DataSourceOptions {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
-    synchronize: false,
+    synchronize: true,
     ...isProductionOption,
   };
 

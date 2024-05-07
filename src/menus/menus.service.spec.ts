@@ -11,7 +11,7 @@ describe('MenusService', () => {
   const mockCreateparentMenusDto: CreateMenusDto = {
     order: 1,
     name: "유저 메뉴",
-    icon: "USERS",
+    icon: 0,
   }
   const mockCreateparentMenusEntity: MenusEntity = {
     id: 1,

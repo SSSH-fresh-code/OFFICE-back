@@ -8,6 +8,10 @@ import { Page } from '@sssh-fresh-code/types-sssh';
 
 @Injectable()
 export class CommonService {
+  static replaceSpaceToUnderline(text: string) {
+    return text.replaceAll(" ", "_");
+  }
+
   async paginate<T extends BaseEntity>(
     dto: PaginationDto,
     repo: Repository<T>,

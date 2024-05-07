@@ -150,7 +150,7 @@ describe('AuthsController (e2e)', () => {
   describe('/auths/alarms/:id (GET)', () => {
     it('해당 알람이 가진 권한 리스트 조회', async () => {
       const testCode = "TEST0001";
-      await test.repository.query(`INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test1', 'test1', 'test1', 'test1', 'path', 999);`);
+      await test.repository.query(`INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test1', 0, 'test1', 'test1', 'path', 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM alarms WHERE "name" = 'test1'`);
 
 
@@ -180,7 +180,7 @@ describe('AuthsController (e2e)', () => {
     it('해당 알람 권한 수정', async () => {
       const testCode = "TEST0001";
 
-      await test.repository.query(`INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test1', 'test1', 'test1', 'test1', 'path', 999);`);
+      await test.repository.query(`INSERT INTO alarms ("name", "icon", "title", "contents", "path", "order") values ('test1', 0, 'test1', 'test1', 'path', 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM alarms WHERE "name" = 'test1'`);
       await test.repository.query(`insert into auths ("code", "description") values ('${testCode}', 'TEST_AUTH');`)
 
@@ -211,7 +211,7 @@ describe('AuthsController (e2e)', () => {
   describe('/auths/menus/:id (GET)', () => {
     it('해당 메뉴가 가진 권한 리스트 조회', async () => {
       const testCode = "TEST0001";
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
 
@@ -241,7 +241,7 @@ describe('AuthsController (e2e)', () => {
     it('해당 알람 권한 수정', async () => {
       const testCode = "TEST0001";
 
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`insert into auths ("code", "description") values ('${testCode}', 'TEST_AUTH');`)
 

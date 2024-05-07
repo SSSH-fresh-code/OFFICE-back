@@ -44,7 +44,7 @@ describe('MenusController (e2e)', () => {
 
   describe('/menus/auths (GET)', () => {
     it('권한에 따른 메뉴 조회 1', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
@@ -74,8 +74,8 @@ describe('MenusController (e2e)', () => {
     });
 
     it('권한에 따른 메뉴 조회 2', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 1000);`);
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test2', 'test2', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 1000);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test2', 0, 999);`);
       const test1 = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       const test2 = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test2'`);
       await test.repository.query(`
@@ -115,8 +115,8 @@ describe('MenusController (e2e)', () => {
 
   describe('/menus/all (GET)', () => {
     it('부모 메뉴 전체 조회', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 1000);`);
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test2', 'test2', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 1000);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test2', 0, 999);`);
 
       const response = await test.req("get", "/menus/all", undefined, await test.getToken())
 
@@ -136,7 +136,7 @@ describe('MenusController (e2e)', () => {
 
   describe('/menus/:id (GET)', () => {
     it('메뉴 단일 조회', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
       const response = await test.req("get", `/menus/${id}`, undefined, await test.getToken())
@@ -161,7 +161,7 @@ describe('MenusController (e2e)', () => {
       const dto: CreateMenusDto = {
         order: 999,
         name: "test1",
-        icon: "TEST"
+        icon: 0
       }
 
       const response = await test.req("post", "/menus", dto, await test.getToken());
@@ -173,7 +173,7 @@ describe('MenusController (e2e)', () => {
     })
 
     it('자식 메뉴 생성', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
       const dto: CreateMenusDto = {
@@ -203,13 +203,13 @@ describe('MenusController (e2e)', () => {
   describe('/menus (PATCH)', () => {
 
     it('부모 메뉴 수정', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
       const dto: UpdateMenusDto = {
         id,
         name: "test2",
-        icon: "test2"
+        icon: 0
       }
 
       const response = await test.req("patch", "/menus", dto, await test.getToken());
@@ -221,7 +221,7 @@ describe('MenusController (e2e)', () => {
     })
 
     it('자식 메뉴 수정', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
@@ -252,7 +252,7 @@ describe('MenusController (e2e)', () => {
     });
 
     it('부모 자식 메뉴 동시 수정', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
@@ -299,7 +299,7 @@ describe('MenusController (e2e)', () => {
 
   describe('/alarms/:id (DELETE)', () => {
     it('부모 자식 메뉴 전체 삭제', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
@@ -313,7 +313,7 @@ describe('MenusController (e2e)', () => {
       expect(response.body.affected).toBe(4);
     });
     it('부모 메뉴 단일 삭제', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
 
       const response = await test.req("delete", `/menus/${id}`, undefined, await test.getToken());
@@ -322,7 +322,7 @@ describe('MenusController (e2e)', () => {
       expect(response.body.affected).toBe(1);
     });
     it('자식 메뉴 단일 삭제', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
@@ -338,7 +338,7 @@ describe('MenusController (e2e)', () => {
     });
 
     it('[에러케이스] 자식메뉴가 있지만 부모만 삭제하려는 경우', async () => {
-      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 'test1', 999);`);
+      await test.repository.query(`INSERT INTO menus ("name", "icon", "order") values ('test1', 0, 999);`);
       const [{ id }] = await test.repository.query(`SELECT * FROM menus WHERE "name" = 'test1'`);
       await test.repository.query(`
         INSERT INTO menus ("name", "link", "parentMenusId", "order") values ('test1-2', '/test', ${id}, 1001);
