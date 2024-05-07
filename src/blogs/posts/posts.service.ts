@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { QueryFailedError, Repository } from 'typeorm';
+import { FindManyOptions, QueryFailedError, Repository } from 'typeorm';
 import { PostsEntity } from './entities/posts.entity';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CommonService } from 'src/common/common.service';
@@ -21,6 +21,7 @@ export class PostsService {
       select: {
         id: true,
         title: true,
+        description: true,
         contents: true,
         author: {
           userName: true
@@ -51,10 +52,11 @@ export class PostsService {
   }
 
   async getPosts(page: PostsPaginationDto) {
-    return await this.commonService.paginate<PostsEntity>(page, this.postsRepository, {
+    const overrideFindOptions: FindManyOptions<PostsEntity> = {
       select: {
         id: true,
         title: true,
+        description: true,
         contents: true,
         author: {
           userName: true
@@ -69,18 +71,29 @@ export class PostsService {
         },
         createdAt: true
       },
+      where: {},
       relations: {
         author: true,
         series: true,
         topic: true
       }
-    });
+    }
+
+    if (page.where__topicName) {
+      overrideFindOptions.where["topic"] = { name: page.where__topicName }
+    } else if (page.where__seriesId) {
+      overrideFindOptions.where["series"] = { id: page.where__seriesId }
+    }
+
+    return await this.commonService.paginate<PostsEntity>(page, this.postsRepository, overrideFindOptions);
   }
+
 
   async createPosts(dto: CreatePostsDto, user: TTokenPayload) {
     try {
       const post = await this.postsRepository.create({
         title: CommonService.replaceSpaceToUnderline(dto.title),
+        description: dto.description,
         contents: dto.contents,
         topic: { id: dto.topicId },
         series: { id: dto.seriesId },
@@ -114,13 +127,13 @@ export class PostsService {
 
     try {
       const post = await this.postsRepository.create({
-        id: dto.id,
-        title: CommonService.replaceSpaceToUnderline(dto.title),
-        contents: dto.contents,
-        topic: { id: dto.topicId },
-        series: { id: dto.seriesId },
+        ...oriPost,
+        ...dto,
+        topic: dto.topicId ? { id: dto.topicId } : { id: oriPost.topic.id },
+        series: dto.seriesId ? { id: dto.seriesId } : { id: null },
         author: { id: oriPost.author.id }
       });
+
       return await this.postsRepository.save(post);
     } catch (e: any) {
       if (e instanceof QueryFailedError) {

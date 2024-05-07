@@ -1,10 +1,11 @@
 import { BadRequestException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { QueryFailedError, Repository } from 'typeorm';
+import { FindManyOptions, QueryFailedError, Repository } from 'typeorm';
 import { ExceptionMessages } from 'src/common/message/exception.message';
 import { CommonService } from 'src/common/common.service';
 import { SeriesEntity } from './entities/series.entity';
 import { seriesPaginationDto } from './dto/series-pagination.dto';
 import { CreateSeriesDto } from './dto/create-series.dto';
+import { UpdateSeriesDto } from './dto/update-series.dto';
 
 @Injectable()
 export class SeriesService {
@@ -27,7 +28,7 @@ export class SeriesService {
   }
 
   async getSeriesList(page: seriesPaginationDto) {
-    return await this.commonService.paginate<SeriesEntity>(page, this.seriesRepository, {
+    const overrideFindOptions: FindManyOptions<SeriesEntity> = {
       select: {
         id: true,
         name: true,
@@ -36,19 +37,29 @@ export class SeriesService {
           name: true
         }
       },
+      where: {},
       relations: {
         topic: true
       }
-    });
+    }
+
+    if (page.where__topicName) {
+      overrideFindOptions.where["topic"] = { name: page.where__topicName }
+    }
+
+    return await this.commonService.paginate<SeriesEntity>(page, this.seriesRepository, overrideFindOptions);
   }
 
-  async getSeriesListForSelect() {
+  async getSeriesListByTopicForSelect(id: number) {
     return await this.seriesRepository.find({
       select: {
         id: true,
         name: true
+      },
+      where: {
+        topic: { id }
       }
-    })
+    });
   }
   async createSeries(dto: CreateSeriesDto) {
     const seriesDto = await this.seriesRepository.create({
@@ -59,6 +70,28 @@ export class SeriesService {
     try {
       const { id } = await this.seriesRepository.save(seriesDto);
       return { id };
+    } catch (e: any) {
+      if (e instanceof QueryFailedError) {
+        if (e.driverError.code === "23505") {
+          throw new BadRequestException(ExceptionMessages.EXIST_NAME);
+        }
+      }
+    }
+
+    throw new InternalServerErrorException(ExceptionMessages.INTERNAL_SERVER_ERROR);
+  }
+
+  async updateSeries(dto: UpdateSeriesDto) {
+    const series = await this.seriesRepository.findOne({ where: { id: dto.id } });
+
+    try {
+      const seriesDto = await this.seriesRepository.create({
+        ...series,
+        name: dto.name,
+        topic: { id: dto.topicId }
+      });
+
+      return await this.seriesRepository.save(seriesDto);
     } catch (e: any) {
       if (e instanceof QueryFailedError) {
         if (e.driverError.code === "23505") {

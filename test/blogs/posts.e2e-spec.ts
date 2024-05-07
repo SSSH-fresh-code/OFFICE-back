@@ -47,6 +47,7 @@ describe('PostController (e2e)', () => {
 
       const postDto: CreatePostsDto = {
         title,
+        description: "",
         contents: "## 내용",
         topicId: id,
       }
@@ -106,6 +107,7 @@ describe('PostController (e2e)', () => {
 
       const postDto: CreatePostsDto = {
         title,
+        description: "",
         contents: "## 내용",
         topicId: id,
       }
@@ -124,6 +126,7 @@ describe('PostController (e2e)', () => {
 
       const postDto: CreatePostsDto = {
         title,
+        description: "",
         contents: "## 내용",
         topicId: id,
       }
@@ -162,7 +165,7 @@ describe('PostController (e2e)', () => {
       const response = await test.req("patch", "/posts", postDto, await test.getToken());
 
       expect(response.status).toBe(200);
-      expect(response.body.title).toBe(updateTitle.replaceAll(" ", "_"));
+      expect(response.body.title).toBe(updateTitle);
     });
 
     it('[에러케이스] 이미 존재하는 타이틀로 수정', async () => {
@@ -176,7 +179,7 @@ describe('PostController (e2e)', () => {
 
       const postDto: UpdatePostsDto = {
         ...post,
-        title: updateTitle
+        title: updateTitle.replaceAll(" ", "_")
       }
 
       const response = await test.req("patch", "/posts", postDto, await test.getToken());

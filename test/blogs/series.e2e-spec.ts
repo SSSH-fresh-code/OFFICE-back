@@ -88,6 +88,23 @@ describe('SeriesController (e2e)', () => {
       expect(response.body.info.take).toBe(10);
       expect(response.body.data.length).toBeGreaterThanOrEqual(2);
     })
+
+    it('시리즈 리스트 조회', async () => {
+      await test.repository.query(test.topicInsertQuery());
+      await test.repository.query(test.topicInsertQuery("TESTTopic2"));
+      const [topic] = await test.repository.query(test.topicSelectQuery());
+      const [topic2] = await test.repository.query(test.topicSelectQuery("TESTTopic2"));
+      await test.repository.query(test.seriesInsertQuery(topic.id));
+      await test.repository.query(test.seriesInsertQuery(topic2.id, "TESTSeries2"));
+
+      const response = await test.req("get", `/series?page=1&where__topicName=TESTTopic2`, undefined, await test.getToken())
+      console.log(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.info.total).toBe(1);
+      expect(response.body.info.take).toBe(10);
+      expect(response.body.data.length).toBe(1);
+    })
   });
 
   describe('/series (POST)', () => {

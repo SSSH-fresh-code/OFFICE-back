@@ -14,6 +14,9 @@ export class PostsEntity extends BaseEntity implements IPost {
   @Column({ type: "varchar", length: "250" })
   title: string;
 
+  @Column({ type: "varchar", length: "3000", nullable: true })
+  description: string;
+
   @Column({ type: "text", nullable: false })
   contents: string;
 

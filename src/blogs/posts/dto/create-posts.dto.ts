@@ -13,6 +13,12 @@ export class CreatePostsDto {
 
   @IsString({ message: stringValidationMessage })
   @ApiProperty({
+    example: "설명"
+  })
+  description: string;
+
+  @IsString({ message: stringValidationMessage })
+  @ApiProperty({
     example: "## 모르겠어"
   })
   contents: string;
