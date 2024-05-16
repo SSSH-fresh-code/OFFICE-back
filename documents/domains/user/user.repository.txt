@@ -1,0 +1,27 @@
++-----------------------------------------------------------------+
+|        <<interface>>                                            |
+|        IUserRepository                                          |
++-----------------------------------------------------------------+
+| + insert(dto: any): Promise<UserEntity>
+| + select(page: PaginationDto): Promise<Page<UserEntity>>
+| + update(): Promise<UserEntity>
+| + delete(): Promise<UserEntity>
+| + existsUserById(): Promise<boolean>
+| + existsUserByName(): Promise<boolean>
+| + findAndCount(): Promise<[UserEntity[], number]>
++-----------------------------------------------------------------+
+
++-----------------------------------------------------------------+
+|        UserRepository                                           |
++-----------------------------------------------------------------+
+| - userRepository: Repository<UserEntity>
++-----------------------------------------------------------------+
+| + constructor(userRepository: Repository<UserEntity>)
+| + insert(dto: any): Promise<UserEntity>
+| + select(page: PaginationDto): Promise<Page<UserEntity>>
+| + update(): Promise<UserEntity>
+| + delete(): Promise<UserEntity>
+| + existsUserById(): Promise<boolean>
+| + existsUserByName(): Promise<boolean>
+| + findAndCount(): Promise<[UserEntity[], number]>
++-----------------------------------------------------------------+
