@@ -20,8 +20,8 @@ export class UserRepository implements IUserRepository {
     return this.userRepository.findAndCount(option);
   }
 
-  update(dto: UpdateUserDto): Promise<UpdateResult> {
-    return this.userRepository.update(dto.id, dto);
+  update(entity: UserEntity): Promise<UpdateResult> {
+    return this.userRepository.update(entity.id, entity);
   }
 
   delete(pk: string): Promise<DeleteResult> {

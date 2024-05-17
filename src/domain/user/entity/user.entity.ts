@@ -1,3 +1,4 @@
+import { IsEmail } from 'class-validator';
 import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
 import { WorkEntity } from 'src/work/entities/work.entity';
@@ -13,6 +14,7 @@ export class UserEntity extends BaseEntity {
     nullable: false,
     unique: true,
   })
+  @IsEmail()
   email: string;
 
   @Column({

@@ -18,10 +18,9 @@ export class UpdateUserDto extends PickType(UserEntity, [
   @Length(2, 10, { message: legnthValidationMessage })
   @IsString({ message: stringValidationMessage })
   @ApiProperty({ example: "" })
-  userName: string;
+  name: string;
 
   @IsBoolean()
   @ApiProperty({ example: false })
   isPwReset: boolean;
-
 }
