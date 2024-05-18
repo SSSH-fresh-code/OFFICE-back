@@ -1,7 +1,5 @@
 import { IsEmail } from 'class-validator';
-import { AuthsEntity } from 'src/auths/entities/auths.entity';
 import { BaseEntity } from 'src/common/entities/base.entity';
-import { WorkEntity } from 'src/work/entities/work.entity';
 import { Column, DeleteDateColumn, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('user')

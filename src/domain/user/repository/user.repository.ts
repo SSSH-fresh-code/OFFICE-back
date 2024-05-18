@@ -1,19 +1,18 @@
 import { Repository, FindManyOptions, InsertResult, UpdateResult, DeleteResult } from 'typeorm';
 import { UserEntity } from '../entity/user.entity';
 import { Inject, Injectable } from '@nestjs/common';
-import IUserRepository from './IUserRepository';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import iUserRepository from '../interface/user.repository.interface';
+import User from '../entity/user';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
+export class UserRepository implements iUserRepository {
   constructor(
     @Inject('USER_REPOSITORY')
     private readonly userRepository: Repository<UserEntity>,
   ) { }
 
-  insert(dto: CreateUserDto): Promise<InsertResult> {
-    return this.userRepository.insert(dto);
+  insert(user: User): Promise<InsertResult> {
+    return this.userRepository.insert(user.toUserEntity());
   }
 
   select(option: FindManyOptions<UserEntity>): Promise<[UserEntity[], number]> {
@@ -28,8 +27,10 @@ export class UserRepository implements IUserRepository {
     return this.userRepository.delete(pk);
   }
 
-  findOneById(id: string): Promise<UserEntity> {
-    return this.userRepository.findOneOrFail({ where: { id } });
+  async findOneById(id: string): Promise<User> {
+    const entity = await this.userRepository.findOneOrFail({ where: { id } });
+
+    return new User(entity);
   }
 
   existsUserByEmail(email: string): Promise<boolean> {

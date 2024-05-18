@@ -4,6 +4,7 @@ import { UserRepository } from './user.repository';
 import { UserEntity } from '../entity/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { testModule } from 'src/domain/common/provider/test.module';
+import User from '../entity/user';
 
 describe('UserRepository', () => {
   let userRepository: UserRepository;
@@ -31,7 +32,9 @@ describe('UserRepository', () => {
 
   describe('insert', () => {
     it('정상케이스', async () => {
-      const result = await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+
+      const result = await userRepository.insert(user);
 
       expect(result).toBeInstanceOf(InsertResult);
       expect(result.generatedMaps).toHaveLength(1);
@@ -41,7 +44,8 @@ describe('UserRepository', () => {
 
   describe('select', () => {
     it('정상케이스', async () => {
-      await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      await userRepository.insert(user);
 
       const findManyOptions: FindManyOptions<UserEntity> = {
         order: { id: 'DESC' },
@@ -59,11 +63,12 @@ describe('UserRepository', () => {
 
   describe('update', () => {
     it('정상케이스', async () => {
-      const { identifiers } = await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      const { identifiers } = await userRepository.insert(user);
 
       const id = identifiers[0].id as string;
 
-      const user: UserEntity = {
+      const entity: UserEntity = {
         id,
         email: "test2@test.com",
         password: "1234",
@@ -73,7 +78,7 @@ describe('UserRepository', () => {
         updatedAt: new Date(),
       };
 
-      const result = await userRepository.update(user);
+      const result = await userRepository.update(entity);
 
       expect(result).toBeInstanceOf(UpdateResult);
       expect(result.affected).toBe(1);
@@ -82,7 +87,8 @@ describe('UserRepository', () => {
 
   describe('delete', () => {
     it('정상케이스', async () => {
-      const { identifiers } = await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      const { identifiers } = await userRepository.insert(user);
 
       const id = identifiers[0].id as string;
 
@@ -95,20 +101,22 @@ describe('UserRepository', () => {
 
   describe('findOneById', () => {
     it('정상 케이스', async () => {
-      const { identifiers } = await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      const { identifiers } = await userRepository.insert(user);
 
       const id = identifiers[0].id as string;
 
       const result = await userRepository.findOneById(id);
 
-      expect(result).toBeInstanceOf(UserEntity);
-      expect(result.id).toBe(id);
+      expect(result).toBeInstanceOf(User);
+      expect(result.validate()).toBeUndefined();
     });
   });
 
   describe('existsUserByEmail', () => {
     it('정상케이스 - 이메일이 존재하는 경우', async () => {
-      await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      await userRepository.insert(user);
 
       const result = await userRepository.existsUserByEmail(createUserDto.email);
 
@@ -116,7 +124,8 @@ describe('UserRepository', () => {
     });
 
     it('정상케이스 - 이메일이 존재하지 않는 경우', async () => {
-      await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      await userRepository.insert(user);
 
       const result = await userRepository.existsUserByEmail(createUserDto.email + "1");
 
@@ -126,7 +135,8 @@ describe('UserRepository', () => {
 
   describe('existsUserByName', () => {
     it('정상케이스 - 이름이 존재하는 경우', async () => {
-      await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      await userRepository.insert(user);
 
       const result = await userRepository.existsUserByName(createUserDto.name);
 
@@ -134,7 +144,8 @@ describe('UserRepository', () => {
     });
 
     it('정상케이스 - 이름이 존재하지 않는 경우', async () => {
-      await userRepository.insert(createUserDto);
+      const user = new User(createUserDto);
+      await userRepository.insert(user);
 
       const result = await userRepository.existsUserByName(createUserDto.name);
 
