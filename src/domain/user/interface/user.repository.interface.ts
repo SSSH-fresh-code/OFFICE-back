@@ -1,5 +1,5 @@
 import { UserEntity } from '../entity/user.entity';
-import ISsshRepository from '../../common/iSsshRepository';
+import ISsshRepository from '../../common/repository/iSsshRepository';
 import User from '../entity/user';
 
 export default interface iUserRepository extends ISsshRepository<UserEntity> {

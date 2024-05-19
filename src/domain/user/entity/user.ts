@@ -33,7 +33,7 @@ export default class User implements iUser {
       throw new BadRequestException(ExceptionMessages.INVALID_UUID);
     } else if (!User.emailRegex.test(this.email)) {
       throw new BadRequestException(ExceptionMessages.INVALID_EMAIL);
-    } else if (this.password && this.password.length < 6) {
+    } else if (typeof this.password === "string" && this.password.length < 6) {
       throw new BadRequestException(ExceptionMessages.INVALID_PASSWORD);
     } else if (this.name.length < 2 || this.name.length > 19) {
       throw new BadRequestException(ExceptionMessages.INVALID_NAME);
@@ -41,19 +41,23 @@ export default class User implements iUser {
   }
 
   async encryptPassword(): Promise<void> {
-    try {
-      const salt = await genSalt(Number(process.env.SALT_ROUNDS));
+    const salt = await genSalt(Number(process.env.SALT_ROUNDS));
 
-      const encryptPw = await hash(this.password, salt);
+    const encryptPw = await hash(this.password, salt);
 
-      this.password = encryptPw;
-    } catch (error) {
-      throw error;
-    }
+    this.password = encryptPw;
   }
 
   async comparePassword(plainPassword: string): Promise<boolean> {
     return await compare(plainPassword, this.password);
+  }
+
+  setPassword(password: string) {
+    if (password.length < 6) {
+      throw new BadRequestException(ExceptionMessages.INVALID_PASSWORD);
+    }
+
+    this.password = password;
   }
 
   toUserEntity(): UserEntity {
@@ -68,7 +72,4 @@ export default class User implements iUser {
     user.updatedAt = this.updatedAt;
     return user;
   }
-
-
-
 }
